@@ -1,0 +1,4 @@
+* poc
+
+Programs for Przetwarzanie obrazów cyfrowych course (Digital Image Processing).
+
