@@ -55,7 +55,7 @@
   (let [shell (Shell.)
 	layout (FillLayout.)
 	scroll-previous-point (atom nil)
-	canvas (Canvas. shell (reduce bit-or [SWT/NO_REDRAW_RESIZE]))
+	canvas (Canvas. shell SWT/NONE)
 	menu-bar (make-menu-bar shell canvas)]
     (props/doprops canvas
 		   :+paint.paint-control
@@ -68,14 +68,22 @@
 		   (if (-> event .stateMask
 			   (bit-and SWT/BUTTON1) (not= 0))
 		     (do 
-		       (when-let [[x y] @scroll-previous-point]
-			 (swap! *scroll-delta*
-				(fn [[act-x act-y]]
-				  [(+ act-x (- (.x event) x))
-				   (+ act-y (- (.y event) y))])))
+		       (when-let [[prev-x prev-y] @scroll-previous-point]
+			 (let [scroll-x (- (.x event) prev-x)
+			       scroll-y (- (.y event) prev-y)
+			       rect (.getClientArea canvas)]
+			   ;;(println scroll-x scroll-y)
+			   (.scroll canvas scroll-x scroll-y 0 0
+				    (.width rect) (.height rect) false)
+			   
+			   (swap! *scroll-delta*
+				  (fn [[act-x act-y]]
+				    [(+ act-x scroll-x)
+				     (+ act-y scroll-y)]))))
 		       (swap! scroll-previous-point
-			      (fn [_] [(.x event) (.y event)]))
-		       (.redraw canvas))
+			      (fn [_] [(.x event) (.y event)])))
+		       ;;(.redraw canvas))
+		     ;; set previus point to nil when mouse button is up
 		     (swap! scroll-previous-point (fn [_] nil))))
     (props/doprops shell
 		   :text "ASDF"
