@@ -12,13 +12,18 @@
 
 ;;(defonce *display* (Display.))
 
+
+(def *image* (atom nil))
+(def *scroll-delta* (atom [0 0]))
+
 (defn open-file [file-name]
   (let [new-image (Image. (Display/getDefault)
 			  file-name)]
     (swap! *image* (fn [current-image]
 		     (if current-image
 		       (.dispose current-image))
-		     new-image))))
+		     new-image))
+    (swap! *scroll-delta* (fn [_] [0 0]))))
 
 (defn make-menu-bar [shell canvas]
   (let [menu-bar (Menu. shell SWT/BAR)
@@ -36,7 +41,7 @@
 							  .open)]
 				   (println "Otwieram" file-name)
 				   (open-file file-name)
-				   (.update canvas)))
+				   (.redraw canvas)))
 	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
 				 :text "&Wyjdź\tCtrl+Q"
 				 :accelerator (+ SWT/MOD1 (int \Q))
@@ -45,42 +50,33 @@
 		   :menu file-menu)
     menu-bar))
 
-(def *image* (atom nil))
 
 (defn make-gui []
   (let [shell (Shell.)
 	layout (FillLayout.)
-	scroll-delta (atom nil)
-	start-point (atom [0 0])
+	scroll-previous-point (atom nil)
 	canvas (Canvas. shell (reduce bit-or [SWT/NO_REDRAW_RESIZE]))
 	menu-bar (make-menu-bar shell canvas)]
     (props/doprops canvas
 		   :+paint.paint-control
 		   (do
-		     ;; (println "Przerysowywuje obszar")
+		     ;;(println "Przerysowywuje obszar")
 		     (when-let [img @*image*]
-		       (let [[x y] @start-point]
+		       (let [[x y] @*scroll-delta*]
 			 (.. event gc (drawImage img x y)))))
 		   :+mouse-move.mouse-move
-		   (if (and @*image*
-			    (-> event .stateMask
-				(bit-and SWT/BUTTON1) (not= 0)))
-		     (let [[x y] @scroll-delta]
-		       (if-not x 
-			 (swap! scroll-delta (fn [_] [(.x event)
-						      (.y event)]))
-			 (let [dx (- (.x event) x)
-			       dy (- (.y event) y)
-			       rect (.getBounds @*image*)]
-			   ;(println dx dy)
-			   (.scroll canvas dx dy 0 0
-				    (.width rect) (.height rect) false))))
-		     (do (swap! start-point
-				(fn [[start-x start-y]]
-				  (let [[scroll-x scroll-y] @scroll-delta]
-				    [(- start-x (- (.x event) scroll-x))
-				     (- start-y (- (.y event) scroll-y))])))
-			 (swap! scroll-delta (fn [_] nil)))))
+		   (if (-> event .stateMask
+			   (bit-and SWT/BUTTON1) (not= 0))
+		     (do 
+		       (when-let [[x y] @scroll-previous-point]
+			 (swap! *scroll-delta*
+				(fn [[act-x act-y]]
+				  [(+ act-x (- (.x event) x))
+				   (+ act-y (- (.y event) y))])))
+		       (swap! scroll-previous-point
+			      (fn [_] [(.x event) (.y event)]))
+		       (.redraw canvas))
+		     (swap! scroll-previous-point (fn [_] nil))))
     (props/doprops shell
 		   :text "ASDF"
 		   :menu-bar menu-bar
