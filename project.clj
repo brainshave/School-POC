@@ -3,6 +3,7 @@
   :aot [#"poc\..*"]
   :main poc.poc
   :omit-source true
+  :jvm-opts ["-Xmx1g"]
   :dependencies [[org.clojure/clojure "1.2.0"]
 		 [org.clojure/clojure-contrib "1.2.0"]
 		 [org.eclipse/swt-gtk-linux-x86 "3.5.2"]

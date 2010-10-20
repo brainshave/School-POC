@@ -10,7 +10,7 @@
 	   (org.eclipse.swt.events SelectionListener PaintListener
 				   MouseMoveListener MouseListener
 				   ControlListener)
-	   (org.eclipse.swt.graphics GC Image)
+	   (org.eclipse.swt.graphics GC Image ImageData)
 	   (org.eclipse.swt SWT)
 	   (net.miginfocom.swt MigLayout)))
 

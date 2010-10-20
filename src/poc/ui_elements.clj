@@ -36,7 +36,7 @@
 		   :menu file-menu)
     menu-bar))
 
-(defmacro setup-scale [scale display min max selection formula]
+(defmacro setup-scale [scale display key min max selection formula]
   `(props/doprops ~scale
 		  :minimum ~min
 		  :maximum ~max
@@ -46,7 +46,10 @@
 		  (let [~(symbol "selection") (.getSelection ~scale)
 			value# ~formula]
 		    (.setText ~display
-			      (str value#)))))
+			      (str value#))
+		    (swap! image/*brightness-contrast-gamma*
+			   (fn [act-val#]
+			     (assoc act-val# ~key value#))))))
 
 (defn- make-tools [expand-bar]
   (list "Jasność, kontrast, nasycenie"
@@ -67,11 +70,11 @@
 	      gamma-display (props/doprops (Label. panel SWT/HORIZONTAL)
 					   :text "1.0")
 	      gamma-scale (Scale. panel SWT/HORIZONTAL)]
-	  (setup-scale brightness-scale brightness-display
+	  (setup-scale brightness-scale brightness-display :brightness
 		       0 512 256 (- selection 256))
-	  (setup-scale contrast-1-scale contrast-1-display
+	  (setup-scale contrast-1-scale contrast-1-display :contrast
 		       0 256 128 (- selection 128))
-	  (setup-scale gamma-scale gamma-display
+	  (setup-scale gamma-scale gamma-display :gamma
 		       1 190 100 (float (if (<= selection 100)
 					(/ selection 100)
 					(+ (/ (- selection 100) 10) 1))))
