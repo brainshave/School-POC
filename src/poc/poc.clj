@@ -1,16 +1,15 @@
 (ns poc.poc
   "Przetwarzanie obrazów cyfrowych"
+  (:gen-class)
   (:require (little-gui-helper [properties :as props]))
   (:import (org.eclipse.swt.widgets Display Shell Menu MenuItem
 				    FileDialog Canvas)
 	   (org.eclipse.swt.layout FillLayout)
 	   (org.eclipse.swt.events SelectionListener PaintListener
-				   MouseMoveListener MouseListener)
+				   MouseMoveListener MouseListener
+				   ControlListener)
 	   (org.eclipse.swt.graphics GC Image)
 	   (org.eclipse.swt SWT)))
-
-
-;;(defonce *display* (Display.))
 
 
 (def *image* (atom nil))
@@ -24,6 +23,20 @@
 		       (.dispose current-image))
 		     new-image))
     (swap! *scroll-delta* (fn [_] [0 0]))))
+
+(defn realign-image [canvas]
+  (if @*image*
+    (swap! *scroll-delta*
+	   (fn [[x y]]
+	     (let [canvas-area (.getClientArea canvas)
+		   image-area (.getBounds @*image*)]
+	       (map int
+		    [(max x (/ (- (.width canvas-area)
+				  (.width image-area))
+			       2))
+		     (max y (/ (- (.height canvas-area)
+				  (.height image-area))
+			       2))]))))))
 
 (defn make-menu-bar [shell canvas]
   (let [menu-bar (Menu. shell SWT/BAR)
@@ -41,6 +54,7 @@
 							  .open)]
 				   (println "Otwieram" file-name)
 				   (open-file file-name)
+				   (realign-image canvas)
 				   (.redraw canvas)))
 	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
 				 :text "&Wyjdź\tCtrl+Q"
@@ -82,7 +96,6 @@
 				     (+ act-y scroll-y)]))))
 		       (swap! scroll-previous-point
 			      (fn [_] [(.x event) (.y event)])))
-		       ;;(.redraw canvas))
 		     ;; set previus point to nil when mouse button is up
 		     (swap! scroll-previous-point (fn [_] nil))))
     (props/doprops shell
@@ -93,7 +106,7 @@
     (.open shell)
     shell))
 
-(defn main- [& args]
+(defn -main [& args]
   (let [display (Display/getDefault)
 	shell (make-gui)]
     (if-let [file-name (first args)]
@@ -103,8 +116,9 @@
       (if (not (.readAndDispatch display))
 	(.sleep display))
       (if disposed
-	(do (swap! *image* (fn [image]
-			 (if image (.dispose image))
-			 nil))
+	(do (swap! *image*
+		   (fn [image]
+		     (if image (.dispose image))
+		     nil))
 	    (.dispose display))
 	(recur (.isDisposed shell))))))
