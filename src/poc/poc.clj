@@ -1,82 +1,35 @@
 (ns poc.poc
   "Przetwarzanie obrazów cyfrowych"
   (:gen-class)
-  (:require (little-gui-helper [properties :as props]))
+  (:require (little-gui-helper [properties :as props])
+	    (poc [ui-elements :as ui]
+		 [image :as image]))
   (:import (org.eclipse.swt.widgets Display Shell Menu MenuItem
-				    FileDialog Canvas)
+				    FileDialog Canvas Label)
 	   (org.eclipse.swt.layout FillLayout)
 	   (org.eclipse.swt.events SelectionListener PaintListener
 				   MouseMoveListener MouseListener
 				   ControlListener)
 	   (org.eclipse.swt.graphics GC Image)
-	   (org.eclipse.swt SWT)))
-
-
-(def *image* (atom nil))
-(def *scroll-delta* (atom [0 0]))
-
-(defn open-file [file-name]
-  (let [new-image (Image. (Display/getDefault)
-			  file-name)]
-    (swap! *image* (fn [current-image]
-		     (if current-image
-		       (.dispose current-image))
-		     new-image))
-    (swap! *scroll-delta* (fn [_] [0 0]))))
-
-(defn realign-image [canvas]
-  (if @*image*
-    (swap! *scroll-delta*
-	   (fn [[x y]]
-	     (let [canvas-area (.getClientArea canvas)
-		   image-area (.getBounds @*image*)]
-	       (map int
-		    [(max x (/ (- (.width canvas-area)
-				  (.width image-area))
-			       2))
-		     (max y (/ (- (.height canvas-area)
-				  (.height image-area))
-			       2))]))))))
-
-(defn make-menu-bar [shell canvas]
-  (let [menu-bar (Menu. shell SWT/BAR)
-	file-item (props/doprops (MenuItem. menu-bar SWT/CASCADE)
-				 :text "&Plik")
-	file-menu (Menu. shell SWT/DROP_DOWN)
-	file-dialog (props/doprops (FileDialog. shell SWT/OPEN)
-				   :filter-extensions
-				   (into-array ["*.jpg;*.png;*.gif"]))
-	open-item (props/doprops (MenuItem. file-menu SWT/PUSH)
-				 :text "&Otwórz\tCtrl+O"
-				 :accelerator (+ SWT/MOD1 (int \O))
-				 :+selection.widget-selected
-				 (when-let [file-name (-> file-dialog
-							  .open)]
-				   (println "Otwieram" file-name)
-				   (open-file file-name)
-				   (realign-image canvas)
-				   (.redraw canvas)))
-	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
-				 :text "&Wyjdź\tCtrl+Q"
-				 :accelerator (+ SWT/MOD1 (int \Q))
-				 :+selection.widget-selected (.close shell))]
-    (props/doprops file-item
-		   :menu file-menu)
-    menu-bar))
+	   (org.eclipse.swt SWT)
+	   (net.miginfocom.swt MigLayout)))
 
 
 (defn make-gui []
   (let [shell (Shell.)
-	layout (FillLayout.)
+	layout (MigLayout. "" "0[grow,fill,100::]0[grow,fill,30:30:300]0" "0[grow,fill]0")
 	scroll-previous-point (atom nil)
 	canvas (Canvas. shell SWT/NONE)
-	menu-bar (make-menu-bar shell canvas)]
+	menu-bar (ui/make-menu-bar shell canvas)
+	expand-bar (ui/make-expand-bar shell)]
+    ;;(props/doprops label :text "ASDF")
     (props/doprops canvas
+		   ;;:layout-data "grow"
 		   :+paint.paint-control
 		   (do
 		     ;;(println "Przerysowywuje obszar")
-		     (when-let [img @*image*]
-		       (let [[x y] @*scroll-delta*]
+		     (when-let [img @image/*image*]
+		       (let [[x y] @image/*scroll-delta*]
 			 (.. event gc (drawImage img x y)))))
 		   :+mouse-move.mouse-move
 		   (if (-> event .stateMask
@@ -90,7 +43,7 @@
 			   (.scroll canvas scroll-x scroll-y 0 0
 				    (.width rect) (.height rect) false)
 			   
-			   (swap! *scroll-delta*
+			   (swap! image/*scroll-delta*
 				  (fn [[act-x act-y]]
 				    [(+ act-x scroll-x)
 				     (+ act-y scroll-y)]))))
@@ -110,13 +63,13 @@
   (let [display (Display/getDefault)
 	shell (make-gui)]
     (if-let [file-name (first args)]
-      (open-file file-name))
+      (image/open-file file-name))
     (.open shell) 
     (loop [disposed false]
       (if (not (.readAndDispatch display))
 	(.sleep display))
       (if disposed
-	(do (swap! *image*
+	(do (swap! image/*image*
 		   (fn [image]
 		     (if image (.dispose image))
 		     nil))
