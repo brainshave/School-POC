@@ -9,6 +9,9 @@
 	   (org.eclipse.swt.events SelectionListener)
 	   (net.miginfocom.swt MigLayout)))
 
+
+  
+
 (defn make-menu-bar [shell canvas]
   (let [menu-bar (Menu. shell SWT/BAR)
 	file-item (props/doprops (MenuItem. menu-bar SWT/CASCADE)
@@ -24,9 +27,7 @@
 				 (when-let [file-name (-> file-dialog
 							  .open)]
 				   (println "Otwieram" file-name)
-				   (image/open-file file-name)
-				   (image/realign-image canvas)
-				   (.redraw canvas)))
+				   (image/open-file file-name)))
 	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
 				 :text "&Wyjdź\tCtrl+Q"
 				 :accelerator (+ SWT/MOD1 (int \Q))
@@ -35,9 +36,9 @@
 		   :menu file-menu)
     menu-bar))
 
-(defmacro setup-scale [scale display max selection formula]
+(defmacro setup-scale [scale display min max selection formula]
   `(props/doprops ~scale
-		  :minimum 0
+		  :minimum ~min
 		  :maximum ~max
 		  :selection ~selection
 		  :layout-data "wrap"
@@ -50,7 +51,7 @@
 (defn- make-tools [expand-bar]
   (list "Jasność, kontrast, nasycenie"
 	(let [panel (Composite. expand-bar SWT/NONE)
-	      layout (MigLayout. "" "[right][center,fill,30!][left,fill,grow]")
+	      layout (MigLayout. "" "[right][fill,30!][left,fill,grow]")
 	      brightness-label (props/doprops (Label. panel SWT/HORIZONTAL)
 					      :text "Jasność:")
 	      brightness-display (props/doprops (Label. panel SWT/HORIZONTAL)
@@ -67,11 +68,11 @@
 					   :text "1.0")
 	      gamma-scale (Scale. panel SWT/HORIZONTAL)]
 	  (setup-scale brightness-scale brightness-display
-		       512 256 (- selection 256))
+		       0 512 256 (- selection 256))
 	  (setup-scale contrast-1-scale contrast-1-display
-		       256 128 (- selection 128))
+		       0 256 128 (- selection 128))
 	  (setup-scale gamma-scale gamma-display
-		       190 100 (float (if (<= selection 100)
+		       1 190 100 (float (if (<= selection 100)
 					(/ selection 100)
 					(+ (/ (- selection 100) 10) 1))))
 	  (props/doprops panel :layout layout))))

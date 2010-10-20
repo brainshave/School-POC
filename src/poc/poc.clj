@@ -23,6 +23,10 @@
 	menu-bar (ui/make-menu-bar shell canvas)
 	expand-bar (ui/make-expand-bar shell)]
     ;;(props/doprops label :text "ASDF")
+    (add-watch image/*image* :canvas-refresh (fn [_ _ _ new-val]
+     					       (.asyncExec (Display/getDefault)
+							   #(when new-val
+							      (.redraw canvas)))))
     (props/doprops canvas
 		   ;;:layout-data "grow"
 		   :+paint.paint-control
