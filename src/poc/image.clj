@@ -30,11 +30,8 @@
 				  
 				  new-image))))))
 
-(defn apply-transform [transform & args]
-  (apply send *image-data* transform args))
-
 (defn do-color-mapping [image-data mapping]
-  (println "Start do-color-mapping, size:" (count (.data image-data)))
+  (print "Start do-color-mapping, size:" (count (.data image-data)) "... ")
   (let [original-data (.data @*original-data*)
 	data (.data image-data)]
     (time (ByteWorker/work original-data data mapping mapping mapping))
@@ -45,27 +42,49 @@
 	    :contrast 0
 	    :gamma 1.0}))
 
-(defn new-color-mapping [brightness contrast gamma]
-  (into-array Byte/TYPE
-	      (map byte (for [color (range 256)]
-			  (let [new-color (-> color
-					      (/ 256) double (Math/pow (/ 1 gamma)) (* 256) ;; gamma
-					      (* (+ 1 (/ contrast 128))) (- contrast) ;; contrast
-					      (+ brightness))]
-			    (cond
-			     (> new-color 255) -1
-			     (> new-color 127) (- new-color 256)
-			     (< new-color 0) 0
-			     true new-color))))))
+(def *color-mappings* (agent nil))
+
+(defn- recalc-mappings [transforms])
+  
+
+(def ^{:doc "Map of transformations, where key determines order of applying"}
+     *transforms*  (atom {}))
+
+(defn color-mappings-calc [])
+  
+
+(defn add-transform
+  "Add transformation a which depends on atom a with priority prio"
+  [prio f a]
+  (swap! *transforms* (fn [transforms] (if (transforms prio)
+					 (throw (Exception. (str "Don't override transform on this priority: " prio)))
+					 (assoc transforms prio f))))
+  (comment add-watch))
+  
+;; (defn apply-transform [transform & args]
+;;   (apply send *image-data* transform args))
+;;  
+;; (defn new-color-mapping [brightness contrast gamma]
+;;   (into-array Byte/TYPE
+;; 	      (map byte (for [color (range 256)]
+;; 			  (let [new-color (-> color
+;; 					      (/ 256) double (Math/pow (/ 1 gamma)) (* 256) ;; gamma
+;; 					      (* (+ 1 (/ contrast 128))) (- contrast) ;; contrast
+;; 					      (+ brightness))]
+;; 			    (cond
+;; 			     (> new-color 255) -1
+;; 			     (> new-color 127) (- new-color 256)
+;; 			     (< new-color 0) 0
+;; 			     true new-color))))))
     
 
-(defn apply-color-mapping [mapping]
-  (apply-transform do-color-mapping mapping))
+;; (defn apply-color-mapping [mapping]
+;;   (apply-transform do-color-mapping mapping))
 
 
-(add-watch *brightness-contrast-gamma* :modify
-	   (fn [_ _ _ {:keys [brightness contrast gamma]}]
-	     (apply-color-mapping (new-color-mapping brightness contrast gamma))))
+;; (add-watch *brightness-contrast-gamma* :modify
+;; 	   (fn [_ _ _ {:keys [brightness contrast gamma]}]
+;; 	     (apply-color-mapping (new-color-mapping brightness contrast gamma))))
 
 (defn open-file [file-name]
   (send *original-data* (fn [_] (ImageData. file-name))))

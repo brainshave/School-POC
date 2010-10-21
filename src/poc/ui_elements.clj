@@ -3,7 +3,7 @@
 	    (poc [image :as image]))
   (:import (org.eclipse.swt.widgets Menu MenuItem
 				    FileDialog ExpandBar ExpandItem
-				    Composite Label Scale)
+				    Composite Label Scale Canvas Display)
 	   (org.eclipse.swt.custom ScrolledComposite)
 	   (org.eclipse.swt SWT)
 	   (org.eclipse.swt.events SelectionListener)
@@ -51,6 +51,13 @@
 			   (fn [act-val#]
 			     (assoc act-val# ~key value#))))))
 
+(defn make-bcg-plot [parent]
+  (let [plot (Canvas. parent SWT/BORDER)]
+    (props/doprops plot
+		   :size ^unroll (256 256)
+		   :background (-> (Display/getDefault) (.getSystemColor SWT/COLOR_LIST_BACKGROUND))
+		   :layout-data "center, span 3, width 256!, height 256!")))
+
 (defn- make-tools [expand-bar]
   (list "Jasność, kontrast, nasycenie"
 	(let [panel (Composite. expand-bar SWT/NONE)
@@ -69,7 +76,8 @@
 					 :text "Gamma:")
 	      gamma-display (props/doprops (Label. panel SWT/HORIZONTAL)
 					   :text "1.0")
-	      gamma-scale (Scale. panel SWT/HORIZONTAL)]
+	      gamma-scale (Scale. panel SWT/HORIZONTAL)
+	      plot (make-bcg-plot panel)]
 	  (setup-scale brightness-scale brightness-display :brightness
 		       0 512 256 (- selection 256))
 	  (setup-scale contrast-1-scale contrast-1-display :contrast
