@@ -14,20 +14,21 @@
 (add-watch *original-data* :clone-image
 	   (fn [_ _ _ new-data]
 	     (if new-data
-	       (send *image-data* (fn [_] (.clone new-data))))))
+	       (send *image-data* (fn [_] (.clone new-data)))
+	       (swap! *scroll-delta* (fn [_] [0 0])))))
 
 ;; refresh images when transform finishes
 (add-watch *image-data*	:image-refresher
 	   (fn [_ _ _ new-data]
 	     (when new-data
 	       (swap! *image* (fn [current-image]
-				(if current-image
-				  (.dispose current-image))
-				(if new-data
-				  (Image. (Display/getDefault)
-					  new-data)
-				  nil)))
-	       (swap! *scroll-delta* (fn [_] [0 0])))))
+				(let [new-image (if new-data
+						  (Image. (Display/getDefault)
+							  new-data))]
+				  (if current-image
+				    (.dispose current-image))
+				  
+				  new-image))))))
 
 (defn apply-transform [transform & args]
   (apply send *image-data* transform args))
@@ -36,16 +37,7 @@
   (println "Start do-color-mapping, size:" (count (.data image-data)))
   (let [original-data (.data @*original-data*)
 	data (.data image-data)]
-    (ByteWorker/work original-data data mapping)
-    ;; 	n (count data)]
-    ;; (loop [i 0]
-    ;;   (when (< i n)
-    ;; 	(let [old-byte (aget original-data i)]
-    ;; 	  (aset-byte data i (aget mapping (if (< old-byte 0)
-    ;; 					    (+ 256 old-byte)
-    ;; 					    old-byte))))
-    ;; 	(recur (inc i))))
-    (println "End do-color-mapping.")
+    (time (ByteWorker/work original-data data mapping mapping mapping))
     image-data))
 
 (def *brightness-contrast-gamma*
@@ -56,7 +48,10 @@
 (defn new-color-mapping [brightness contrast gamma]
   (into-array Byte/TYPE
 	      (map byte (for [color (range 256)]
-			  (let [new-color (+ color brightness)]
+			  (let [new-color (-> color
+					      (/ 256) double (Math/pow (/ 1 gamma)) (* 256) ;; gamma
+					      (* (+ 1 (/ contrast 128))) (- contrast) ;; contrast
+					      (+ brightness))]
 			    (cond
 			     (> new-color 255) -1
 			     (> new-color 127) (- new-color 256)
