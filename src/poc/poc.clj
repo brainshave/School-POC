@@ -56,7 +56,7 @@
 		     ;; set previus point to nil when mouse button is up
 		     (swap! scroll-previous-point (fn [_] nil))))
     (props/doprops shell
-		   :text "ASDF"
+		   :text "Przetwarzanie obrazów Cyfrowych"
 		   :menu-bar menu-bar
 		   :layout layout
 		   :size ^unroll (300 200))
