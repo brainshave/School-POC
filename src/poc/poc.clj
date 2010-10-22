@@ -23,6 +23,8 @@
 	menu-bar (ui/make-menu-bar shell canvas)
 	expand-bar (ui/make-expand-bar shell)]
     ;;(props/doprops label :text "ASDF")
+    (add-watch image/*original-data* :realign-image (fn [_ _ _ loaded-image-data]
+						      (image/realign-image canvas loaded-image-data)))
     (add-watch image/*image* :canvas-refresh (fn [_ _ _ new-val]
      					       (.asyncExec (Display/getDefault)
 							   #(when new-val
@@ -56,10 +58,10 @@
 		     ;; set previus point to nil when mouse button is up
 		     (swap! scroll-previous-point (fn [_] nil))))
     (props/doprops shell
-		   :text "Przetwarzanie obrazów Cyfrowych"
+		   :text "Przetwarzanie ObrazÃ³w Cyfrowych / Szymon Witamborski"
 		   :menu-bar menu-bar
 		   :layout layout
-		   :size ^unroll (300 200))
+		   :size ^unroll (800 700))
     (.open shell)
     shell))
 

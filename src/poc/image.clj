@@ -13,9 +13,8 @@
 
 (add-watch *original-data* :clone-image
 	   (fn [_ _ _ new-data]
-	     (if new-data
-	       (send *image-data* (fn [_] (.clone new-data)))
-	       (swap! *scroll-delta* (fn [_] [0 0])))))
+	     (when new-data
+	       (send *image-data* (fn [_] (.clone new-data))))))
 
 ;; refresh images when transform finishes
 (add-watch *image-data*	:image-refresher
@@ -90,16 +89,15 @@
   (send *original-data* (fn [_] (ImageData. file-name))))
 
 
-(defn realign-image [canvas image]
-  (if image
-    (swap! *scroll-delta*
-	   (fn [[x y]]
-	     (let [canvas-area (.getClientArea canvas)
-		   image-area (.getBounds image)]
-	       (map int
-		    [(max x (/ (- (.width canvas-area)
-				  (.width image-area))
-			       2))
-		     (max y (/ (- (.height canvas-area)
-				  (.height image-area))
-			       2))]))))))
+(defn realign-image [canvas image-data]
+  (if image-data
+    (.asyncExec (Display/getDefault)
+		#(reset! *scroll-delta*
+			 (let [canvas-area (.getClientArea canvas)]
+			   (map int
+				[(max 0 (/ (- (.width canvas-area)
+					      (.width image-data))
+					   2))
+				 (max 0 (/ (- (.height canvas-area)
+					      (.height image-data))
+					   2))]))))))
