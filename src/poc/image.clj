@@ -3,18 +3,60 @@
 	   (org.eclipse.swt.graphics Image ImageData)
 	   (poc ByteWorker)))
 
+(def ^{:doc "Original image data loaded from file."}
+     *original-data* (agent nil))
 
-(def *image* (atom nil))
-(def *scroll-delta* (atom [0 0]))
+(def ^{:doc "A map where key is priority and value is a fn.  Fn takes
+  three arguments: reds, greens, blues. Each one is a sequence of
+  consecutive mappings for color: first element is mapping for pixel
+  of value 0, and so on"}
+     *transformations* (atom {}))
 
-(def *original-data* (agent nil))
+(def ^{:private true :doc "Value from every recalc-color-mapping will start"}
+     *color-mappings-start* (->> (range 256) (repeat 3) vec))
 
-(def *image-data* (agent nil))
+(def ^{:doc "An agent, where *transformations* are applied. Value
+  kept its a vector of final color mappings: [reds, greens, blues]"}
+     *color-mappings* (agent *color-mappings-start*))
+
+
+(def ^{:doc "Manipulated image data. Mapping color mappings to byte
+array of image will happen here."}
+     *image-data* (agent nil))
 
 (add-watch *original-data* :clone-image
 	   (fn [_ _ _ new-data]
 	     (when new-data
-	       (send *image-data* (fn [_] (.clone new-data))))))
+	       (send *image-data* (fn [_] (.clone new-data)))
+	       (send *color-mappings* identity)))) ;; to apply transformations on new image
+
+(defn to-byte-array
+  "Convert sequence to byte array"
+  [seq]
+  (->> seq
+       (map #(cond
+	      (> % 255) -1
+	      (> % 127) (- % 256)
+	      (< % 0) 0
+	      true %))
+       (map byte)
+       (into-array Byte/TYPE))) 
+
+(defn apply-color-mappings [image-data mappings]
+  (comment (print "Start do-color-mapping, size:"
+		  (count (.data image-data)) "... "))
+  (let [original-data (.data @*original-data*)
+	data (.data image-data)
+	[reds greens blues] (map to-byte-array mappings)]
+    (ByteWorker/work original-data data
+			   reds greens blues)
+    image-data))
+
+(add-watch *color-mappings* :apply-transforms
+	   (fn [_ _ _ color-mappings]
+	     (send *image-data* apply-color-mappings color-mappings)))
+
+(def *image* (atom nil))
 
 ;; refresh images when transform finishes
 (add-watch *image-data*	:image-refresher
@@ -29,36 +71,35 @@
 				  
 				  new-image))))))
 
-(defn do-color-mapping [image-data mapping]
-  (print "Start do-color-mapping, size:" (count (.data image-data)) "... ")
-  (let [original-data (.data @*original-data*)
-	data (.data image-data)]
-    (time (ByteWorker/work original-data data mapping mapping mapping))
-    image-data))
-
-(def *brightness-contrast-gamma*
-     (atom {:brightness 0
-	    :contrast 0
-	    :gamma 1.0}))
-
-(def *color-mappings* (agent nil))
-
-(defn- recalc-mappings [transforms])
+(defn recalc-color-mappings
+  "Reduce *color-mappings* by applying consecutive tranformations from
+  *transformations*. Transformations are ordered by key."
+  [_]
+  (->> @*transformations* (sort-by first)
+       (reduce (fn [[reds greens blues] [_ [f a]]]
+		 (f @a reds greens blues))
+	       *color-mappings-start*)))
   
 
-(def ^{:doc "Map of transformations, where key determines order of applying"}
-     *transforms*  (atom {}))
-
-(defn color-mappings-calc [])
-  
-
-(defn add-transform
-  "Add transformation a which depends on atom a with priority prio"
+(defn add-transformation
+  "Add transformation f which depends on atom a with priority prio.
+  f must be a function of atom_value, reds, greens, blues.
+  See documentation of *transformations*."
   [prio f a]
-  (swap! *transforms* (fn [transforms] (if (transforms prio)
-					 (throw (Exception. (str "Don't override transform on this priority: " prio)))
-					 (assoc transforms prio f))))
-  (comment add-watch))
+  (swap! *transformations*  #(assoc % prio [f a]))
+  (add-watch a :transfrom-watcher
+	     (fn [_ _ _ _]
+	       (send *color-mappings* recalc-color-mappings))))
+
+
+;; old
+
+
+
+;; VARIOUS TRANSFORMATIONS
+
+
+
   
 ;; (defn apply-transform [transform & args]
 ;;   (apply send *image-data* transform args))
@@ -89,6 +130,8 @@
   (println "Otwieram" file-name)
   (send *original-data* (fn [_] (ImageData. file-name))))
 
+
+(def *scroll-delta* (atom [0 0]))
 
 (defn realign-image [canvas image-data]
   (if image-data

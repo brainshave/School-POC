@@ -3,7 +3,8 @@
   (:gen-class)
   (:require (little-gui-helper [properties :as props])
 	    (poc [ui-elements :as ui]
-		 [image :as image]))
+		 [image :as image]
+		 [transformations :as transformations]))
   (:import (org.eclipse.swt.widgets Display Shell Menu MenuItem
 				    FileDialog Canvas Label)
 	   (org.eclipse.swt.layout FillLayout)
@@ -61,13 +62,14 @@
 		   :text "Przetwarzanie Obrazów Cyfrowych / Szymon Witamborski"
 		   :menu-bar menu-bar
 		   :layout layout
-		   :size ^unroll (800 700))
+		   :size ^unroll (980 700))
     (.open shell)
     shell))
 
 (defn -main [& args]
   (let [display (Display/getDefault)
 	shell (make-gui)]
+    (transformations/add-all-transformations)
     (if-let [file-name (first args)]
       (image/open-file file-name))
     (.open shell) 

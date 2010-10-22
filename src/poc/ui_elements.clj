@@ -1,6 +1,7 @@
 (ns poc.ui-elements
   (:require (little-gui-helper [properties :as props])
-	    (poc [image :as image]))
+	    (poc [image :as image]
+		 [transformations :as transformations]))
   (:import (org.eclipse.swt.widgets Menu MenuItem
 				    FileDialog ExpandBar ExpandItem
 				    Composite Label Scale Canvas Display)
@@ -46,16 +47,20 @@
 			value# ~formula]
 		    (.setText ~display
 			      (str value#))
-		    (swap! image/*brightness-contrast-gamma*
+		    (swap! transformations/*brightness-contrast-gamma*
 			   (fn [act-val#]
 			     (assoc act-val# ~key value#))))))
 
 (defn make-bcg-plot [parent]
-  (let [plot (Canvas. parent SWT/BORDER)]
+  (let [panel (Composite. parent SWT/NONE)
+	plot (Canvas. panel SWT/BORDER)]
+    (props/doprops panel
+		   :layout (MigLayout. "fill"))
     (props/doprops plot
 		   :size ^unroll (256 256)
 		   :background (-> (Display/getDefault) (.getSystemColor SWT/COLOR_LIST_BACKGROUND))
-		   :layout-data "center, span 3, width 256!, height 256!")))
+		   :layout-data "center, width 256!, height 256!")
+    panel))
 
 (defn- make-tools [expand-bar]
   (list "Jasność, kontrast, nasycenie"
@@ -75,8 +80,7 @@
 					 :text "Gamma:")
 	      gamma-display (props/doprops (Label. panel SWT/HORIZONTAL)
 					   :text "1.0")
-	      gamma-scale (Scale. panel SWT/HORIZONTAL)
-	      plot (make-bcg-plot panel)]
+	      gamma-scale (Scale. panel SWT/HORIZONTAL)]
 	  (setup-scale brightness-scale brightness-display :brightness
 		       0 512 256 (- selection 256))
 	  (setup-scale contrast-1-scale contrast-1-display :contrast
@@ -85,7 +89,9 @@
 		       1 190 100 (float (if (<= selection 100)
 					(/ selection 100)
 					(+ (/ (- selection 100) 10) 1))))
-	  (props/doprops panel :layout layout))))
+	  (props/doprops panel :layout layout))
+	
+	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))
     
 
 (defn make-expand-bar [shell]
