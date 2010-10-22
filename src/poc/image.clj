@@ -86,6 +86,7 @@
 ;; 	     (apply-color-mapping (new-color-mapping brightness contrast gamma))))
 
 (defn open-file [file-name]
+  (println "Otwieram" file-name)
   (send *original-data* (fn [_] (ImageData. file-name))))
 
 

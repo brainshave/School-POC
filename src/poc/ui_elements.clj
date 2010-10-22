@@ -26,7 +26,6 @@
 				 :+selection.widget-selected
 				 (when-let [file-name (-> file-dialog
 							  .open)]
-				   (println "Otwieram" file-name)
 				   (image/open-file file-name)))
 	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
 				 :text "&Wyjdź\tCtrl+Q"
@@ -97,6 +96,7 @@
 	(props/doprops expand-item
 		       :text label
 		       :control panel
+		       :expanded true
 		       :height (-> panel (.computeSize SWT/DEFAULT SWT/DEFAULT) .y))))
     (props/doprops expand-bar nil)
     (props/doprops scroll
