@@ -7,7 +7,7 @@
 				    Composite Label Scale Canvas Display)
 	   (org.eclipse.swt.custom ScrolledComposite)
 	   (org.eclipse.swt SWT)
-	   (org.eclipse.swt.events SelectionListener)
+	   (org.eclipse.swt.events SelectionListener PaintListener)
 	   (net.miginfocom.swt MigLayout)))
 
 
@@ -53,13 +53,19 @@
 
 (defn make-bcg-plot [parent]
   (let [panel (Composite. parent SWT/NONE)
-	plot (Canvas. panel SWT/BORDER)]
+	plot (Canvas. panel SWT/NONE)]
     (props/doprops panel
 		   :layout (MigLayout. "fill"))
     (props/doprops plot
 		   :size ^unroll (256 256)
 		   :background (-> (Display/getDefault) (.getSystemColor SWT/COLOR_LIST_BACKGROUND))
-		   :layout-data "center, width 256!, height 256!")
+		   :layout-data "center, width 256!, height 256!"
+		   :+paint.paint-control
+		   (if-let [image (-> @image/*plot-data* second)]
+		     (.. event gc (drawImage image 0 0))))
+    (add-watch image/*plot-data* :plot-on-canvas
+	       (fn [_ _ _ _]
+		 (.asyncExec (Display/getDefault) #(.redraw plot))))
     panel))
 
 (defn- make-tools [expand-bar]

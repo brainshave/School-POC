@@ -1,6 +1,6 @@
 (ns poc.image
   (:import (org.eclipse.swt.widgets Display)
-	   (org.eclipse.swt.graphics Image ImageData)
+	   (org.eclipse.swt.graphics Image ImageData PaletteData)
 	   (poc ByteWorker)))
 
 (def ^{:doc "Original image data loaded from file."}
@@ -20,16 +20,6 @@
      *color-mappings* (agent *color-mappings-start*))
 
 
-(def ^{:doc "Manipulated image data. Mapping color mappings to byte
-array of image will happen here."}
-     *image-data* (agent nil))
-
-(add-watch *original-data* :clone-image
-	   (fn [_ _ _ new-data]
-	     (when new-data
-	       (send *image-data* (fn [_] (.clone new-data)))
-	       (send *color-mappings* identity)))) ;; to apply transformations on new image
-
 (defn to-byte-array
   "Convert sequence to byte array"
   [seq]
@@ -40,19 +30,36 @@ array of image will happen here."}
 	      (< % 0) 0
 	      true %))
        (map byte)
-       (into-array Byte/TYPE))) 
+       (into-array Byte/TYPE)))
+
+(def ^{:doc "*color-mappings* converted to byte arrays"}
+     *color-byte-mappings* (atom (map to-byte-array @*color-mappings*)))
+
+(def ^{:doc "Manipulated image data. Mapping color mappings to byte
+array of image will happen here."}
+     *image-data* (agent nil))
+
+(add-watch *original-data* :clone-image
+	   (fn [_ _ _ new-data]
+	     (when new-data
+	       (send *image-data* (fn [_] (.clone new-data)))
+	       (send *color-mappings* identity)))) ;; to apply transformations on new image
+
+(add-watch *color-mappings* :convert-to-bytes
+	   (fn [_ _ _ mappings]
+	     (reset! *color-byte-mappings* (map to-byte-array mappings))))
 
 (defn apply-color-mappings [image-data mappings]
   (comment (print "Start do-color-mapping, size:"
 		  (count (.data image-data)) "... "))
   (let [original-data (.data @*original-data*)
 	data (.data image-data)
-	[reds greens blues] (map to-byte-array mappings)]
-    (ByteWorker/work original-data data
+	[reds greens blues] mappings]
+    (ByteWorker/applyMaps original-data data
 			   reds greens blues)
     image-data))
 
-(add-watch *color-mappings* :apply-transforms
+(add-watch *color-byte-mappings* :apply-transforms
 	   (fn [_ _ _ color-mappings]
 	     (send *image-data* apply-color-mappings color-mappings)))
 
@@ -92,39 +99,22 @@ array of image will happen here."}
 	       (send *color-mappings* recalc-color-mappings))))
 
 
-;; old
+(def ^{:doc "Plot image data and image"}
+     *plot-data* (agent (let [data (ImageData. 256 256 24
+					       (PaletteData. 0xff0000 0xff00 0xff))
+			      image nil]
+			  [data image])))
 
-
-
-;; VARIOUS TRANSFORMATIONS
-
-
-
-  
-;; (defn apply-transform [transform & args]
-;;   (apply send *image-data* transform args))
-;;  
-;; (defn new-color-mapping [brightness contrast gamma]
-;;   (into-array Byte/TYPE
-;; 	      (map byte (for [color (range 256)]
-;; 			  (let [new-color (-> color
-;; 					      (/ 256) double (Math/pow (/ 1 gamma)) (* 256) ;; gamma
-;; 					      (* (+ 1 (/ contrast 128))) (- contrast) ;; contrast
-;; 					      (+ brightness))]
-;; 			    (cond
-;; 			     (> new-color 255) -1
-;; 			     (> new-color 127) (- new-color 256)
-;; 			     (< new-color 0) 0
-;; 			     true new-color))))))
-    
-
-;; (defn apply-color-mapping [mapping]
-;;   (apply-transform do-color-mapping mapping))
-
-
-;; (add-watch *brightness-contrast-gamma* :modify
-;; 	   (fn [_ _ _ {:keys [brightness contrast gamma]}]
-;; 	     (apply-color-mapping (new-color-mapping brightness contrast gamma))))
+(add-watch *color-byte-mappings* :plot-plot
+	   (fn [_ _ _ [reds greens blues]]
+	     (send *plot-data* (fn [[data image]]
+				 (ByteWorker/plotMaps (.data data)
+						      reds greens blues)
+				 (let [new-image (Image. (Display/getDefault)
+							 data)]
+				   (if image (.dispose image))
+				   [data new-image])))))
+				  
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)
