@@ -53,7 +53,7 @@
 
 (defn make-bcg-plot [parent]
   (let [panel (Composite. parent SWT/NONE)
-	plot (Canvas. panel SWT/NONE)]
+	plot (Canvas. panel SWT/NO_BACKGROUND)]
     (props/doprops panel
 		   :layout (MigLayout. "fill"))
     (props/doprops plot
