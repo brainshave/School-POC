@@ -24,6 +24,7 @@
   "Convert sequence to byte array"
   [seq]
   (->> seq
+       (map int)
        (map #(cond
 	      (> % 255) -1
 	      (> % 127) (- % 256)

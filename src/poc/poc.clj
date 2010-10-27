@@ -20,7 +20,7 @@
   (let [shell (Shell.)
 	layout (MigLayout. "" "0[grow,fill,100::]0[grow,fill,30:30:300]0" "0[grow,fill]0")
 	scroll-previous-point (atom nil)
-	canvas (Canvas. shell SWT/NONE)
+	canvas (Canvas. shell SWT/NO_BACKGROUND)
 	menu-bar (ui/make-menu-bar shell canvas)
 	expand-bar (ui/make-expand-bar shell)]
     ;;(props/doprops label :text "ASDF")
