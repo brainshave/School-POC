@@ -1,6 +1,7 @@
 (ns poc.image
-  (:import (org.eclipse.swt.widgets Display)
+  (:import (org.eclipse.swt.widgets Display MessageBox)
 	   (org.eclipse.swt.graphics Image ImageData PaletteData)
+	   (org.eclipse.swt SWT)
 	   (poc ByteWorker)))
 
 (def ^{:doc "Original image data loaded from file."}
@@ -19,12 +20,14 @@
   kept its a vector of final color mappings: [reds, greens, blues]"}
      *color-mappings* (agent *color-mappings-start*))
 
+(defn ok? [image]
+  (and image (not (.isDisposed image))))
 
 (defn to-byte-array
   "Convert sequence to byte array"
   [seq]
   (->> seq
-       (map int)
+       (map #(.intValue %))
        (map #(cond
 	      (> % 255) -1
 	      (> % 127) (- % 256)
@@ -53,11 +56,12 @@ array of image will happen here."}
 (defn apply-color-mappings [image-data mappings]
   (comment (print "Start do-color-mapping, size:"
 		  (count (.data image-data)) "... "))
-  (let [original-data (.data @*original-data*)
-	data (.data image-data)
+  (let [original-data @*original-data*
+	data image-data
 	[reds greens blues] mappings]
-    (ByteWorker/applyMaps original-data data
-			   reds greens blues)
+    (if (and original-data image-data)
+      (ByteWorker/applyMaps original-data data
+			    reds greens blues))
     image-data))
 
 (add-watch *color-byte-mappings* :apply-transforms
@@ -74,7 +78,7 @@ array of image will happen here."}
 				(let [new-image (if new-data
 						  (Image. (Display/getDefault)
 							  new-data))]
-				  (if current-image
+				  (if (ok? current-image)
 				    (.dispose current-image))
 				  
 				  new-image))))))
@@ -113,13 +117,25 @@ array of image will happen here."}
 						      reds greens blues)
 				 (let [new-image (Image. (Display/getDefault)
 							 data)]
-				   (if image (.dispose image))
+				   (if (ok? image) (.dispose image))
 				   [data new-image])))))
 				  
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)
-  (send *original-data* (fn [_] (ImageData. file-name))))
+  (send *original-data*
+	(fn [_] (let [data (ImageData. file-name)]
+		  (if (.. data palette isDirect)
+		    data
+		    (.asyncExec (Display/getDefault)
+				#(-> (Display/getDefault)
+				     .getShells
+				     first
+				     (MessageBox. (reduce bit-or [SWT/ICON_ERROR, SWT/OK]))
+				     (doto
+					 (.setText "Błąd: Indeskowany obrazek")
+				       (.setMessage "Program nie działa na indeksowanych obrazkach.")
+				       (.open)))))))))
 
 
 (def *scroll-delta* (atom [0 0]))
