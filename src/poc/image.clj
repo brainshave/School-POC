@@ -23,6 +23,11 @@
 (defn ok? [image]
   (and image (not (.isDisposed image))))
 
+(defn dispose-safely [image]
+  (.asyncExec (Display/getDefault)
+	      #(if (ok? image)
+		 (.dispose image))))
+
 (defn to-byte-array
   "Convert sequence to byte array"
   [seq]
@@ -78,8 +83,7 @@ array of image will happen here."}
 				(let [new-image (if new-data
 						  (Image. (Display/getDefault)
 							  new-data))]
-				  (if (ok? current-image)
-				    (.dispose current-image))
+				  (dispose-safely current-image)
 				  
 				  new-image))))))
 
@@ -117,7 +121,7 @@ array of image will happen here."}
 						      reds greens blues)
 				 (let [new-image (Image. (Display/getDefault)
 							 data)]
-				   (if (ok? image) (.dispose image))
+				   (dispose-safely image)
 				   [data new-image])))))
 				  
 

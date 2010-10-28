@@ -89,8 +89,8 @@
       (if disposed
 	(do (swap! image/*image*
 		   (fn [image]
-		     ;;(if image (.dispose image))
+		     (image/dispose-safely image)
 		     nil))
-	    ;;(.dispose display)
+	    ;;(.dispose display) ;; tego nie powinno byc
 	    )
 	(recur (.isDisposed shell))))))

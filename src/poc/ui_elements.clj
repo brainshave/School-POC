@@ -66,7 +66,7 @@
 		       (.. event gc (drawImage image 0 0)))))
     (add-watch image/*plot-data* :plot-on-canvas
 	       (fn [_ _ _ _]
-		 (.asyncExec (Display/getDefault) #(if (not (.isDisposed plot))
+		 (.asyncExec (Display/getDefault) #(if (image/ok? plot)
 						     (.redraw plot)))))
     panel))
 
