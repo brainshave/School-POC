@@ -61,11 +61,13 @@
 		   :background (-> (Display/getDefault) (.getSystemColor SWT/COLOR_LIST_BACKGROUND))
 		   :layout-data "center, width 256!, height 256!"
 		   :+paint.paint-control
-		   (if-let [image (-> @image/*plot-data* second)]
-		     (.. event gc (drawImage image 0 0))))
+		   (let [image (-> @image/*plot-data* second)]
+		     (if (image/ok? image)
+		       (.. event gc (drawImage image 0 0)))))
     (add-watch image/*plot-data* :plot-on-canvas
 	       (fn [_ _ _ _]
-		 (.asyncExec (Display/getDefault) #(.redraw plot))))
+		 (.asyncExec (Display/getDefault) #(if (not (.isDisposed plot))
+						     (.redraw plot)))))
     panel))
 
 (defn- make-tools [expand-bar]

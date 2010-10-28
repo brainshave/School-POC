@@ -20,7 +20,7 @@
   (let [shell (Shell.)
 	layout (MigLayout. "" "0[grow,fill,100::]0[grow,fill,30:30:300]0" "0[grow,fill]0")
 	scroll-previous-point (atom nil)
-	canvas (Canvas. shell SWT/NONE)
+	canvas (Canvas. shell SWT/NO_BACKGROUND)
 	menu-bar (ui/make-menu-bar shell canvas)
 	expand-bar (ui/make-expand-bar shell)]
     ;;(props/doprops label :text "ASDF")
@@ -35,9 +35,19 @@
 		   :+paint.paint-control
 		   (do
 		     ;;(println "Przerysowywuje obszar")
-		     (when-let [img @image/*image*]
-		       (let [[x y] @image/*scroll-delta*]
-			 (.. event gc (drawImage img x y)))))
+		     (let [img @image/*image*]
+		       (if (image/ok? img)
+			 (let [[x y] @image/*scroll-delta*
+			       canvas-width (.. canvas getBounds width)
+			       canvas-height (.. canvas getBounds height)
+			       image-width (.. img getBounds width)
+			       image-height (.. img getBounds height)]
+			   (doto (.. event gc)
+			     (.drawImage img x y)
+			     (.fillRectangle 0 0 x canvas-height)
+			     (.fillRectangle x 0 image-width y)
+			     (.fillRectangle x (+ y image-height) image-width (- canvas-height y image-height))
+			     (.fillRectangle (+ x image-width) 0 (- canvas-width x image-width) canvas-height))))))
 		   :+mouse-move.mouse-move
 		   (if (-> event .stateMask
 			   (bit-and SWT/BUTTON1) (not= 0))
@@ -79,7 +89,8 @@
       (if disposed
 	(do (swap! image/*image*
 		   (fn [image]
-		     (if image (.dispose image))
+		     ;;(if image (.dispose image))
 		     nil))
-	    (.dispose display))
+	    ;;(.dispose display)
+	    )
 	(recur (.isDisposed shell))))))
