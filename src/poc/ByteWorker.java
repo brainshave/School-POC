@@ -3,9 +3,8 @@ package poc;
 import org.eclipse.swt.graphics.ImageData;
 
 public class ByteWorker {
-    public static void applyMaps(ImageData orig, ImageData mod,
-				   byte[] rmap, byte[] gmap, byte[] bmap) {
-	// int n = orig.length;
+    public static final void applyMaps (ImageData orig, ImageData mod,
+					byte[] rmap, byte[] gmap, byte[] bmap) {
 	final int orig_height = orig.height;
 	final int orig_line_width = orig.bytesPerLine;
 
@@ -24,11 +23,11 @@ public class ByteWorker {
 	
 	
 	final int n = orig_data.length;
-	final int width = orig.width;
+	final int width = orig.width * 3;
 	
 	for (int line_start = 0; line_start < n; line_start += orig_line_width) {
-	    int pixels_end = line_start + 3 * width;
-	    for (int i = line_start; i < pixels_end; i++) {
+	    int pixels_end = line_start + width;
+	    for (int i = line_start; i < pixels_end; ) {
 		int color = orig_data[i];
 		if (color < 0) {
 		    color += 256;
@@ -50,15 +49,17 @@ public class ByteWorker {
 		    color += 256;
 		}
 		mod_data[i] = bmap[color];
+		
+		++i;
 	    }
 	}
-	// }
-	// return mod;
     }
 
-    public static byte[] plotMaps(byte[] plot,
-				  byte[] rmap, byte[] gmap, byte[] bmap) {
+    public static final void plotMaps (ImageData plotData,
+				       byte[] rmap, byte[] gmap, byte[] bmap) {
+	byte[] plot = plotData.data;
 	int n = plot.length;
+
 	// clearing plot
 	for (int i = 0; i < n; ++i) {
 	    plot[i] = 0;
@@ -77,17 +78,61 @@ public class ByteWorker {
 		int val = map[i];
 		if (val < 0) val += 256;
 		start = 255 - val;
-
+		       
 		int end_point = end * 768 + i * 3 + color;
-		for(int j = start * 768 + i * 3 + color;
-		    j <= end_point;
-		    j += 768) {
+		int jump = 768;
+		if (start > end) jump = -768;
+		
+		for (int j = start * 768 + i * 3 + color;
+		     j <= end_point;
+		     j += 768) {
 	    	    plot[j] = -1;
 		}
 		end = start;
 	    }
 	}
-	return plot;
+    }
+
+
+    public static final void clearArray(int[] array) {
+	for (int i = 0; i < array.length; ++i) {
+	    array[i] = 0;
+	}
+    }
+
+    public static final void calcHistograms (ImageData imageData,
+					     int[] rhist, int[] ghist, int[] bhist,
+					     int[] rgbhist) {
+	byte[] data = imageData.data;
+	int n = data.length;
+	
+	int lineWidth = imageData.bytesPerLine;
+	int pixelsPerLine = imageData.width * 3;
+
+	clearArray(rhist);
+	clearArray(ghist);
+	clearArray(bhist);
+	clearArray(rgbhist);
+	
+	for (int lineStart = 0; lineStart < n; lineStart += lineWidth) {
+	    int lineEnd = lineStart + pixelsPerLine;
+	    for (int i = lineStart; i < lineEnd; ) {
+		int red   = data[i++];
+		int green = data[i++];
+		int blue  = data[i++];
+		
+		if (red   < 0) red   += 256;
+		if (green < 0) green += 256;
+		if (blue  < 0) blue  += 256;
+		
+		int rgb = (3 * red + 6 * green + blue) / 10;
+
+		rhist   [red]   ++;
+		ghist   [green] ++;
+		bhist   [blue]  ++;
+		rgbhist [rgb]   ++;
+	    }
+	}
     }
 }
 	

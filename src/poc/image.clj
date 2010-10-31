@@ -113,7 +113,7 @@ array of image will happen here."}
 (add-watch *color-byte-mappings* :plot-plot
 	   (fn [_ _ _ [reds greens blues]]
 	     (send *plot-data* (fn [[data image]]
-				 (ByteWorker/plotMaps (.data data)
+				 (ByteWorker/plotMaps data
 						      reds greens blues)
 				 (let [new-image (Image. (Display/getDefault)
 							 data)]
