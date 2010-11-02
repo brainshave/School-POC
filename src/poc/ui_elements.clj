@@ -113,7 +113,19 @@
 				  ["R" "G" "B" "RGB"]
 				  [:r :g :b :rgb]))]
 	  (props/doprops canvas
-			 :layout-data "wrap, span 5, center, width 256!, height 100!")
+			 :layout-data "wrap, span, center, width 256!, height 100!"
+			 :+paint.paint-control
+			 (let [image (-> @image/*original-histogram-data* second)]
+			   (if (image/ok? image)
+			     (.. event gc (drawImage image 0 0))
+			     (doto (.. event gc)
+			       ;; TODO: black bg
+			       (.fillRectangle 0 0 (.. canvas getBounds width)
+					       (.. canvas getBounds height))))))
+	  (add-watch image/*original-histogram-data* :draw-histogram
+		     (fn [_ _ _ _]
+		       (.asyncExec (Display/getDefault) #(if (image/ok? canvas)
+							   (.redraw canvas)))))
 	  (props/doprops panel :layout layout))
 	
 	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))

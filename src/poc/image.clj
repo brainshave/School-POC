@@ -8,7 +8,7 @@
      *original-data* (agent nil))
 
 (def ^{:doc "Original histograms"}
-     *original-histograms* (vec (repeat (int-array 256))))
+     *original-histograms* (agent (vec (repeat 4 (int-array 256)))))
 
 (def ^{:doc "A map where key is priority and value is a fn.  Fn takes
   three arguments: reds, greens, blues. Each one is a sequence of
@@ -52,12 +52,13 @@ array of image will happen here."}
 	       (send *image-data* (fn [_] (.clone new-data)))
 	       (send *color-mappings* identity)))) ;; to apply transformations on new image
 
-(add-watch *original-data* :plot-original-histograms
+(add-watch *original-data* :calc-original-histograms
 	   (fn [_ _ _ new-data]
 	     (when new-data
-	       (send *original-histograms* (fn [hists]
-					     (apply (memfn ByteWorker/calcHistograms)
-						    new-data hists))))))
+	       (send *original-histograms* (fn [[r g b rgb]]
+					     (ByteWorker/calcHistograms
+						    new-data r g b rgb)
+					     [r g b rgb])))))
 
 (add-watch *color-mappings* :convert-to-bytes
 	   (fn [_ _ _ mappings]
@@ -130,6 +131,24 @@ array of image will happen here."}
 				   (if (ok? image) (.dispose image))
 				   [data new-image])))))
 				  
+
+(def ^{:doc "original-histogram-data"}
+     *original-histogram-data*
+     (agent (let [data (ImageData. 256 128 24
+				   (PaletteData. 0xff0000 0xff00 0xff))
+		  image nil]
+	      [data image])))
+
+(add-watch *original-histograms* :plot-histograms
+	   (fn [_ _ _ [r g b rgb]]
+	     (send *original-histogram-data*
+		   (fn [[data image]]
+		     (let [image-data @*original-data*
+			   size (* (.width image-data) (.height image-data))]
+		       (ByteWorker/plotHistograms data size r g b rgb))
+		     (let [new-image (Image. (Display/getDefault) data)]
+		       (if (ok? image) (.dispose image))
+		       [data new-image])))))
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)
