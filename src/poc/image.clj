@@ -7,6 +7,9 @@
 (def ^{:doc "Original image data loaded from file."}
      *original-data* (agent nil))
 
+(def ^{:doc "Original histograms"}
+     *original-histograms* (vec (repeat (int-array 256))))
+
 (def ^{:doc "A map where key is priority and value is a fn.  Fn takes
   three arguments: reds, greens, blues. Each one is a sequence of
   consecutive mappings for color: first element is mapping for pixel
@@ -48,6 +51,13 @@ array of image will happen here."}
 	     (when new-data
 	       (send *image-data* (fn [_] (.clone new-data)))
 	       (send *color-mappings* identity)))) ;; to apply transformations on new image
+
+(add-watch *original-data* :plot-original-histograms
+	   (fn [_ _ _ new-data]
+	     (when new-data
+	       (send *original-histograms* (fn [hists]
+					     (apply (memfn ByteWorker/calcHistograms)
+						    new-data hists))))))
 
 (add-watch *color-mappings* :convert-to-bytes
 	   (fn [_ _ _ mappings]

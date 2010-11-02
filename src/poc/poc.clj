@@ -28,7 +28,8 @@
 						      (image/realign-image canvas loaded-image-data)))
     (add-watch image/*image* :canvas-refresh (fn [_ _ _ new-val]
      					       (.asyncExec (Display/getDefault)
-							   #(when new-val
+							   #(when (and new-val
+								       (image/ok? canvas))
 							      (.redraw canvas)))))
     (props/doprops canvas
 		   ;;:layout-data "grow"

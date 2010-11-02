@@ -4,7 +4,8 @@
 		 [transformations :as transformations]))
   (:import (org.eclipse.swt.widgets Menu MenuItem
 				    FileDialog ExpandBar ExpandItem
-				    Composite Label Scale Canvas Display)
+				    Composite Label Scale Canvas Display
+				    Button)
 	   (org.eclipse.swt.custom ScrolledComposite)
 	   (org.eclipse.swt SWT)
 	   (org.eclipse.swt.events SelectionListener PaintListener)
@@ -97,6 +98,22 @@
 		       1 190 100 (float (if (<= selection 100)
 					(/ selection 100)
 					(+ (/ (- selection 100) 10) 1))))
+	  (props/doprops panel :layout layout))
+	
+	"Histogramy wejściowe"
+	(let [panel (Composite. expand-bar SWT/NONE)
+	      layout (MigLayout. "fill" "[right, grow][][][][left, grow]")
+	      canvas (Canvas. panel SWT/NO_BACKGROUND)
+	      show-label (props/doprops (Label. panel SWT/HORIZONTAL)
+					:text "Wyświetl:")
+	      buttons (doall (map #(props/doprops (Button. panel SWT/TOGGLE)
+						  :text %1
+						  :selection true
+						  :+selection.widget-selected (comment %2))
+				  ["R" "G" "B" "RGB"]
+				  [:r :g :b :rgb]))]
+	  (props/doprops canvas
+			 :layout-data "wrap, span 5, center, width 256!, height 100!")
 	  (props/doprops panel :layout layout))
 	
 	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))
