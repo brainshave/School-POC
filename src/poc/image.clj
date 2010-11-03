@@ -138,13 +138,15 @@ array of image will happen here."}
 				  
 (def *original-histogram-meta* (atom {:r? true :g? true :b? true :rgb? true :scale 28}))
 
-(def ^{:doc "original-histogram-data"}
-     *original-histogram-data*
+(def *original-histogram-data*
      (agent (let [data (ImageData. 256 128 24
 				   (PaletteData. 0xff0000 0xff00 0xff))
 		  image nil]
 	      [data image])))
 
+(def *final-histograms* nil)
+
+(def *final-histogram-data* nil)
 
 (defn plot-histogram
   [[data image] [r g b rgb :as hists] {:keys [r? g? b? rgb? scale]}]
