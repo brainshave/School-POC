@@ -100,10 +100,10 @@
 					(+ (/ (- selection 100) 10) 1))))
 	  (props/doprops panel :layout layout))
 	
-	"Histogramy wejściowe"
+	"Histogramy: wejściowy i wyjściowy"
 	(let [panel (Composite. expand-bar SWT/NONE)
 	      layout (MigLayout. "fill" "[right, grow][][][][left, grow][]")
-	      canvas (Canvas. panel SWT/NO_BACKGROUND)
+	      input-histogram (Canvas. panel SWT/NO_BACKGROUND)
 	      scale (props/doprops (Scale. panel SWT/VERTICAL)
 				   :layout-data "height 128!, wrap"
 				   :maximum 127
@@ -111,7 +111,7 @@
 				   :selection 100)
 	      show-label (props/doprops (Label. panel SWT/HORIZONTAL)
 					:text "Wyświetl:")
-	      buttons (doall (map #(let [button (Button. panel SWT/TOGGLE)]
+	      show-buttons (doall (map #(let [button (Button. panel SWT/TOGGLE)]
 				     (props/doprops
 				      button
 				      :text %1
@@ -122,8 +122,21 @@
 					       (assoc old %2
 						      (.getSelection button))))))
 				  ["R" "G" "B" "RGB"]
-				  [:r? :g? :b? :rgb?]))]
-	  (props/doprops canvas
+				  [:r? :g? :b? :rgb?]))
+	      empty (props/doprops (Label. panel SWT/HORIZONTAL)
+				   :layout-data "wrap")
+	      balance-label (props/doprops (Label. panel SWT/HORIZONTAL)
+					   :text "Wyrównaj:")
+	      balance-buttons (doall (map #(let [button (Button. panel SWT/TOGGLE)]
+					     (props/doprops
+					      button
+					      :text %1
+					      :selection false
+					      :+selection.widget-selected
+					      (comment %2)))
+					  ["R" "G" "B" "RGB"]
+					  [:r? :g? :b? :rgb?]))]
+	  (props/doprops input-histogram
 			 :layout-data "span 5, center, width 256!, height 128!"
 			 :+paint.paint-control
 			 (let [image (-> @image/*original-histogram-data* second)]
@@ -131,16 +144,16 @@
 			     (.. event gc (drawImage image 0 0))
 			     (doto (.. event gc)
 			       ;; TODO: black bg
-			       (.fillRectangle 0 0 (.. canvas getBounds width)
-					       (.. canvas getBounds height))))))
+			       (.fillRectangle 0 0 (.. input-histogram getBounds width)
+					       (.. input-histogram getBounds height))))))
 	  (props/doprops scale
 			 :+selection.widget-selected
 			 (swap! image/*original-histogram-meta*
 				#(assoc % :scale (- 128 (.getSelection scale)))))
 	  (add-watch image/*original-histogram-data* :draw-histogram
 		     (fn [_ _ _ _]
-		       (.asyncExec (Display/getDefault) #(if (image/ok? canvas)
-							   (.redraw canvas)))))
+		       (.asyncExec (Display/getDefault) #(if (image/ok? input-histogram)
+							   (.redraw input-histogram)))))
 	  (props/doprops panel :layout layout))
 	
 	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))
