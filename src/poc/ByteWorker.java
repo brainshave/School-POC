@@ -1,11 +1,13 @@
 package poc;
 
 import java.util.Arrays;
-import org.eclipse.swt.graphics.ImageData;
+import org.eclipse.swt.graphics.*;
 
 public class ByteWorker {
-    public static final void applyMaps (ImageData orig, ImageData mod,
-					byte[] rmap, byte[] gmap, byte[] bmap) {
+    public static final void applyMaps
+	(ImageData orig, ImageData mod,
+	 byte[] rmap, byte[] gmap, byte[] bmap)
+    {
 	final int orig_height = orig.height;
 	final int orig_line_width = orig.bytesPerLine;
 
@@ -56,8 +58,10 @@ public class ByteWorker {
 	}
     }
 
-    public static final void plotMaps (ImageData plotData,
-				       byte[] rmap, byte[] gmap, byte[] bmap) {
+    public static final void plotMaps
+	(ImageData plotData,
+	 byte[] rmap, byte[] gmap, byte[] bmap)
+    {
 	byte[] plot = plotData.data;
 	int n = plot.length;
 
@@ -98,9 +102,10 @@ public class ByteWorker {
 	}
     }
 
-    public static final void calcHistograms (ImageData imageData,
-					     int[] rhist, int[] ghist, int[] bhist,
-					     int[] rgbhist) {
+    public static final void calcHistograms 
+	(ImageData imageData,
+	 int[] rhist, int[] ghist, int[] bhist, int[] rgbhist)
+    {
 	byte[] data = imageData.data;
 	int n = data.length;
 	
@@ -135,9 +140,10 @@ public class ByteWorker {
 
     private static final int[] zeroes = new int[256];
 
-    public static final void plotHistograms (ImageData plotData, int inputSize,
-					     int[] rhist, int[] ghist, int[] bhist,
-					     int[] rgbhist) {
+    public static final void plotHistograms 
+	(ImageData plotData, int inputSize,
+	 int[] rhist, int[] ghist, int[] bhist, int[] rgbhist)
+    {
 	if (rhist   == null)  rhist   = zeroes;
 	if (ghist   == null)  ghist   = zeroes;
 	if (bhist   == null)  bhist   = zeroes;
@@ -159,11 +165,11 @@ public class ByteWorker {
 	    for (int color = 0; color < 3; ++color) {
 
 		int val = (int) (( (double) hists[color][i] * height) / inputSize);
-
-		for (int point = (height - val) * lineWidth + i * 3 + color;
-		     point < n;
-		     point += lineWidth) {
+		
+		int point = (height - val) * lineWidth + i * 3 + color;
+		if (point < 0) point = i * 3 + color;
 		    
+		for (; point < n; point += lineWidth) {
 		    plot[point] = 127;
 		}
 	    }
@@ -171,10 +177,9 @@ public class ByteWorker {
 	    // overlaying rgb layer
 	    int rgbval = (rgbhist[i] * height) / inputSize;
 	    
-	    for (int point = (height - rgbval) * lineWidth + i * 3;
-		 point < n;
-		 point += lineWidth) {
-		
+	    int point = (height - rgbval) * lineWidth + i * 3;
+	    if (point < 0) point = i * 3;
+	    for (; point < n; point += lineWidth) {
 		for(int colorPoint = point; colorPoint < point + 3; ++colorPoint) {
 		    plot[colorPoint] = plot[colorPoint] == 0 ? (byte) 64 : (byte) -1;
 		}

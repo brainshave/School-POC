@@ -8,7 +8,10 @@
      *original-data* (agent nil))
 
 (def ^{:doc "Original histograms"}
-     *original-histograms* (agent (vec (repeat 4 (int-array 256)))))
+     *original-histograms* (agent ^{:size 1} [(int-array 256)
+					      (int-array 256)
+					      (int-array 256)
+					      (int-array 256)]))
 
 (def ^{:doc "A map where key is priority and value is a fn.  Fn takes
   three arguments: reds, greens, blues. Each one is a sequence of
@@ -57,8 +60,10 @@ array of image will happen here."}
 	     (when new-data
 	       (send *original-histograms* (fn [[r g b rgb]]
 					     (ByteWorker/calcHistograms
-						    new-data r g b rgb)
-					     [r g b rgb])))))
+					      new-data r g b rgb)
+					     (let [size (* (.width new-data)
+							   (.height new-data))]
+						  ^{:size size} [r g b rgb]))))))
 
 (add-watch *color-mappings* :convert-to-bytes
 	   (fn [_ _ _ mappings]
@@ -131,6 +136,7 @@ array of image will happen here."}
 				   (if (ok? image) (.dispose image))
 				   [data new-image])))))
 				  
+(def *original-histogram-meta* (atom {:r? true :g? true :b? true :rgb? true :scale 28}))
 
 (def ^{:doc "original-histogram-data"}
      *original-histogram-data*
@@ -139,16 +145,25 @@ array of image will happen here."}
 		  image nil]
 	      [data image])))
 
+
+(defn plot-histogram
+  [[data image] [r g b rgb :as hists] {:keys [r? g? b? rgb? scale]}]
+  (let [size (/ (-> hists meta :size) scale)]
+    (ByteWorker/plotHistograms data (int size)
+			       (if r? r) (if g? g) (if b? b) (if rgb? rgb)))
+  (let [new-image (Image. (Display/getDefault) data)]
+    (if (ok? image) (.dispose image))
+    [data new-image]))
+
 (add-watch *original-histograms* :plot-histograms
-	   (fn [_ _ _ [r g b rgb]]
+	   (fn [_ _ _ hists]
 	     (send *original-histogram-data*
-		   (fn [[data image]]
-		     (let [image-data @*original-data*
-			   size (* (.width image-data) (.height image-data))]
-		       (ByteWorker/plotHistograms data size r g b rgb))
-		     (let [new-image (Image. (Display/getDefault) data)]
-		       (if (ok? image) (.dispose image))
-		       [data new-image])))))
+		   plot-histogram hists @*original-histogram-meta*)))
+
+(add-watch *original-histogram-meta* :plot-histograms
+	   (fn [_ _ _ hist-meta]
+	     (send *original-histogram-data*
+		   plot-histogram @*original-histograms* hist-meta)))
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)

@@ -102,18 +102,29 @@
 	
 	"Histogramy wejściowe"
 	(let [panel (Composite. expand-bar SWT/NONE)
-	      layout (MigLayout. "fill" "[right, grow][][][][left, grow]")
+	      layout (MigLayout. "fill" "[right, grow][][][][left, grow][]")
 	      canvas (Canvas. panel SWT/NO_BACKGROUND)
+	      scale (props/doprops (Scale. panel SWT/VERTICAL)
+				   :layout-data "height 128!, wrap"
+				   :maximum 127
+				   :minimum 0
+				   :selection 100)
 	      show-label (props/doprops (Label. panel SWT/HORIZONTAL)
 					:text "Wyświetl:")
-	      buttons (doall (map #(props/doprops (Button. panel SWT/TOGGLE)
-						  :text %1
-						  :selection true
-						  :+selection.widget-selected (comment %2))
+	      buttons (doall (map #(let [button (Button. panel SWT/TOGGLE)]
+				     (props/doprops
+				      button
+				      :text %1
+				      :selection true
+				      :+selection.widget-selected
+				      (swap! image/*original-histogram-meta*
+					     (fn [old]
+					       (assoc old %2
+						      (.getSelection button))))))
 				  ["R" "G" "B" "RGB"]
-				  [:r :g :b :rgb]))]
+				  [:r? :g? :b? :rgb?]))]
 	  (props/doprops canvas
-			 :layout-data "wrap, span, center, width 256!, height 100!"
+			 :layout-data "span 5, center, width 256!, height 128!"
 			 :+paint.paint-control
 			 (let [image (-> @image/*original-histogram-data* second)]
 			   (if (image/ok? image)
@@ -122,6 +133,10 @@
 			       ;; TODO: black bg
 			       (.fillRectangle 0 0 (.. canvas getBounds width)
 					       (.. canvas getBounds height))))))
+	  (props/doprops scale
+			 :+selection.widget-selected
+			 (swap! image/*original-histogram-meta*
+				#(assoc % :scale (- 128 (.getSelection scale)))))
 	  (add-watch image/*original-histogram-data* :draw-histogram
 		     (fn [_ _ _ _]
 		       (.asyncExec (Display/getDefault) #(if (image/ok? canvas)
