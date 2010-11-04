@@ -21,6 +21,8 @@
 	      (try (catch ArithmeticException e 255)))
 	 color-map)))
 
+(def *balance-histograms*
+     (atom {:r? false :g? false :b? false}))
 
 (defn add-all-transformations []
   (image/add-transformation 10 apply-brightness-contrast-gamma
