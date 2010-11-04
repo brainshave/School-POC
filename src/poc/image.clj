@@ -60,15 +60,18 @@ array of image will happen here."}
 	       (send *image-data* (fn [_] (.clone new-data)))
 	       (send *color-mappings* identity)))) ;; to apply transformations on new image
 
+(defn calc-histograms
+  [[r g b rgb] data]
+  (ByteWorker/calcHistograms data r g b rgb)
+  (let [size (* (.width data)
+		(.height data))]
+    ^{:size size} [r g b rgb]))
+
 (add-watch *original-data* :calc-original-histograms
 	   (fn [_ _ _ new-data]
 	     (when new-data
-	       (send *original-histograms* (fn [[r g b rgb]]
-					     (ByteWorker/calcHistograms
-					      new-data r g b rgb)
-					     (let [size (* (.width new-data)
-							   (.height new-data))]
-						  ^{:size size} [r g b rgb]))))))
+	       (send *original-histograms* calc-histograms new-data))))
+					   
 
 (add-watch *color-mappings* :convert-to-bytes
 	   (fn [_ _ _ mappings]
@@ -148,9 +151,20 @@ array of image will happen here."}
 		  image nil]
 	      [data image])))
 
-(def *final-histograms* nil)
+(def *final-histograms*  (agent ^{:size 1} [(int-array 256)
+					    (int-array 256)
+					    (int-array 256)
+					    (int-array 256)]))
+(add-watch *image-data* :calc-final-histograms
+	   (fn [_ _ _ new-data]
+	     (when new-data
+	       (send *final-histograms* calc-histograms new-data))))
 
-(def *final-histogram-data* nil)
+(def *final-histogram-data*
+     (agent (let [data (ImageData. 256 128 24
+				   (PaletteData. 0xff0000 0xff00 0xff))
+		  image nil]
+	      [data image])))
 
 (defn plot-histogram
   [[data image] [r g b rgb :as hists] {:keys [r? g? b? rgb? scale]}]
@@ -169,7 +183,15 @@ array of image will happen here."}
 (add-watch *original-histogram-meta* :plot-histograms
 	   (fn [_ _ _ hist-meta]
 	     (send *original-histogram-data*
-		   plot-histogram @*original-histograms* hist-meta)))
+		   plot-histogram @*original-histograms* hist-meta)
+	     (send *final-histogram-data*
+		   plot-histogram @*final-histograms* hist-meta)))
+
+(add-watch *final-histograms* :plot-histograms
+	   (fn [_ _ _ hists]
+	     (send *final-histogram-data*
+		   plot-histogram hists @*original-histogram-meta*)))
+
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)

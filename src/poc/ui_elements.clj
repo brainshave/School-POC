@@ -123,7 +123,7 @@
 						      (.getSelection button))))))
 				  ["R" "G" "B" "RGB"]
 				  [:r? :g? :b? :rgb?]))
-	      empty (props/doprops (Label. panel SWT/HORIZONTAL)
+	      empty1 (props/doprops (Label. panel SWT/HORIZONTAL)
 				   :layout-data "wrap")
 	      balance-label (props/doprops (Label. panel SWT/HORIZONTAL)
 					   :text "Wyrównaj:")
@@ -135,7 +135,10 @@
 					      :+selection.widget-selected
 					      (comment %2)))
 					  ["R" "G" "B" "RGB"]
-					  [:r? :g? :b? :rgb?]))]
+					  [:r? :g? :b? :rgb?]))
+	      empty2 (props/doprops (Label. panel SWT/HORIZONTAL)
+				    :layout-data "wrap")
+	      output-histogram (Canvas. panel SWT/NO_BACKGROUND)]
 	  (props/doprops input-histogram
 			 :layout-data "span 5, center, width 256!, height 128!"
 			 :+paint.paint-control
@@ -146,6 +149,16 @@
 			       ;; TODO: black bg
 			       (.fillRectangle 0 0 (.. input-histogram getBounds width)
 					       (.. input-histogram getBounds height))))))
+	  (props/doprops output-histogram
+			 :layout-data "span 5, center, width 256!, height 128!"
+			 :+paint.paint-control
+			 (let [image (-> @image/*final-histogram-data* second)]
+			   (if (image/ok? image)
+			     (.. event gc (drawImage image 0 0))
+			     (doto (.. event gc)
+			       ;; TODO: black bg
+			       (.fillRectangle 0 0 (.. output-histogram getBounds width)
+					       (.. output-histogram getBounds height))))))
 	  (props/doprops scale
 			 :+selection.widget-selected
 			 (swap! image/*original-histogram-meta*
@@ -154,6 +167,10 @@
 		     (fn [_ _ _ _]
 		       (.asyncExec (Display/getDefault) #(if (image/ok? input-histogram)
 							   (.redraw input-histogram)))))
+	  (add-watch image/*final-histogram-data* :draw-histogram
+		     (fn [_ _ _ _]
+		       (.asyncExec (Display/getDefault) #(if (image/ok? output-histogram)
+							   (.redraw output-histogram)))))
 	  (props/doprops panel :layout layout))
 	
 	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))
