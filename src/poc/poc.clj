@@ -17,8 +17,8 @@
 
 
 (defn make-gui []
-  (let [shell (Shell.)
-	layout (MigLayout. "" "0[grow,fill,100::]0[grow,fill,30:30:300]0" "0[grow,fill]0")
+  (let [shell (Shell. (Display/getDefault))
+	layout (MigLayout. "" "0[grow,fill,100::]0[grow,fill,30:30:320]0" "0[grow,fill]0")
 	scroll-previous-point (atom nil)
 	canvas (Canvas. shell SWT/NO_BACKGROUND)
 	menu-bar (ui/make-menu-bar shell canvas)
@@ -28,7 +28,8 @@
 						      (image/realign-image canvas loaded-image-data)))
     (add-watch image/*image* :canvas-refresh (fn [_ _ _ new-val]
      					       (.asyncExec (Display/getDefault)
-							   #(when new-val
+							   #(when (and new-val
+								       (image/ok? canvas))
 							      (.redraw canvas)))))
     (props/doprops canvas
 		   ;;:layout-data "grow"
@@ -76,6 +77,21 @@
     (.open shell)
     shell))
 
+(defn swt-loop []
+  (try (let [display (Display/getDefault)]
+	 (if-not (.readAndDispatch display)
+	   (.sleep display)))
+       (catch Exception e (.printStackTrace e)))
+  (recur))
+
+(defn start [& args]
+  (let [display (Display/getDefault)]
+    (.asyncExec display
+		#(let [shell (make-gui)]
+		   (transformations/add-all-transformations)
+		   (if-let [file-name (first args)]
+		     (image/open-file file-name))
+		   (.open shell)))))
 (defn -main [& args]
   (let [display (Display/getDefault)
 	shell (make-gui)]
