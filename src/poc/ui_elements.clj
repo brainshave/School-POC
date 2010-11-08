@@ -133,7 +133,10 @@
 					      :text %1
 					      :selection false
 					      :+selection.widget-selected
-					      (comment %2)))
+					      (swap! transformations/*balance-histograms*
+						     (fn [old]
+						       (assoc old %2
+							      (.getSelection button))))))
 					  ["R" "G" "B" "RGB"]
 					  [:r? :g? :b? :rgb?]))
 	      empty2 (props/doprops (Label. panel SWT/HORIZONTAL)

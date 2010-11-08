@@ -14,9 +14,10 @@
 					      (int-array 256)]))
 
 (def ^{:doc "A map where key is priority and value is a fn.  Fn takes
-  three arguments: reds, greens, blues. Each one is a sequence of
-  consecutive mappings for color: first element is mapping for pixel
-  of value 0, and so on"}
+  four arguments: First is dereffered value of atom which was added to
+  *transformations*, rest is: reds, greens, blues. Each one is a
+  sequence of consecutive mappings for color: first element is mapping
+  for pixel of value 0, and so on"}
      *transformations* (atom {}))
 
 (def ^{:private true :doc "Value from every recalc-color-mapping will start"}

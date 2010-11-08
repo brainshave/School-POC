@@ -73,7 +73,8 @@
 		   :text "Przetwarzanie Obrazów Cyfrowych / Szymon Witamborski"
 		   :menu-bar menu-bar
 		   :layout layout
-		   :size ^unroll (980 700))
+		   :size ^unroll (980 700)
+		   :maximized true)
     (.open shell)
     shell))
 
