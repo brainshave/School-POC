@@ -4,10 +4,22 @@ import java.util.Arrays;
 import org.eclipse.swt.graphics.*;
 
 public class ByteWorker {
+
+    public static final boolean isBGR(ImageData data) {
+	return data.palette.redMask == 0xff;
+    }
+
     public static final void applyMaps
 	(ImageData orig, ImageData mod,
 	 byte[] rmap, byte[] gmap, byte[] bmap)
     {
+	
+	if(isBGR(orig)) {
+	    byte[] tmp = rmap;
+	    rmap = bmap;
+	    bmap = tmp;
+	}
+
 	final int orig_height = orig.height;
 	final int orig_line_width = orig.bytesPerLine;
 
@@ -70,6 +82,11 @@ public class ByteWorker {
 	
 	byte[][] maps = {rmap, gmap, bmap};
 
+	if(isBGR(plotData)) {
+	    maps[0] = bmap;
+	    maps[2] = rmap;
+	}
+
 	for (int color = 0; color < 3; ++color) {
 	    byte[] map = maps[color];
 	    
@@ -117,12 +134,20 @@ public class ByteWorker {
 	clearArray(bhist);
 	clearArray(rgbhist);
 	
+	boolean bgr = isBGR(imageData);
+	int red, green, blue;
 	for (int lineStart = 0; lineStart < n; lineStart += lineWidth) {
 	    int lineEnd = lineStart + pixelsPerLine;
 	    for (int i = lineStart; i < lineEnd; /* bad style ! */) {
-		int red   = data[i++];
-		int green = data[i++];
-		int blue  = data[i++];
+		if (bgr) {
+		    blue  = data[i++];
+		    green = data[i++];
+		    red   = data[i++];
+		} else {
+		    red   = data[i++];
+		    green = data[i++];
+		    blue  = data[i++];
+		} 
 		
 		if (red   < 0) red   += 256;
 		if (green < 0) green += 256;
@@ -160,6 +185,11 @@ public class ByteWorker {
 	Arrays.fill(plot, (byte) 0);
 	
 	int[][] hists = {rhist, ghist, bhist};
+
+	if(isBGR(plotData)) {
+	    hists[0] = bhist;
+	    hists[2] = rhist;
+	}
 
 	for (int i = 0; i < 256; ++i) {
 	    for (int color = 0; color < 3; ++color) {
