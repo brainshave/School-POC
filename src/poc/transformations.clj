@@ -8,8 +8,8 @@
 
 (defn apply-brightness-contrast-gamma
   [{:keys [brightness contrast gamma]}
-   reds greens blues]
-  (for [color-map [reds greens blues]]
+   & color-maps]
+  (for [color-map color-maps]
     (map #(-> %
 	      ;; gamma: 
 	      (/ 256) double (Math/pow (/ 1 gamma)) (* 256)
@@ -42,8 +42,22 @@
 				    [(first histogram)] (rest histogram))]
 		(map #(* factor (cumulus %1)) color-map))))))
 
+(def *levels*
+     (atom {:in-start 0 :in-end 255 :out-start 0 :out-end 255}))
+
+(defn apply-levels [{:keys [in-start in-end out-start out-end]}
+		    & color-maps]
+  (let [factor (-> (/ (- out-end out-start) (- in-end in-start))
+		   (try (catch ArithmeticException e 255)))]
+    (for [color-map color-maps]
+      (map #(-> % (- in-start) (* factor) (+ out-start))
+	   color-map))))
+				 
+
 (defn add-all-transformations []
-  (image/add-transformation 5 apply-histogram-balancing
+  (image/add-transformation 1 apply-histogram-balancing
 			    *balance-histograms*)
+  (image/add-transformation 2 apply-levels
+			    *levels*)
   (image/add-transformation 10 apply-brightness-contrast-gamma
 			    *brightness-contrast-gamma*))
