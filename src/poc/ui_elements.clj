@@ -19,16 +19,25 @@
 	file-item (props/doprops (MenuItem. menu-bar SWT/CASCADE)
 				 :text "&Plik")
 	file-menu (Menu. shell SWT/DROP_DOWN)
-	file-dialog (props/doprops (FileDialog. shell SWT/OPEN)
+	open-dialog (props/doprops (FileDialog. shell SWT/OPEN)
 				   :filter-extensions
-				   (into-array ["*.jpg;*.png;*.gif"]))
+				   (into-array ["*.jpg;*.png;*.bmp"]))
 	open-item (props/doprops (MenuItem. file-menu SWT/PUSH)
-				 :text "&Otwórz\tCtrl+O"
+				 :text "&Otwórz...\tCtrl+O"
 				 :accelerator (+ SWT/MOD1 (int \O))
 				 :+selection.widget-selected
-				 (when-let [file-name (-> file-dialog
-							  .open)]
+				 (when-let [file-name (.open open-dialog)]
 				   (image/open-file file-name)))
+	save-dialog (props/doprops (FileDialog. shell SWT/SAVE)
+				   :filter-extensions
+				   (into-array ["*.png"]))
+	save-item (props/doprops (MenuItem. file-menu SWT/PUSH)
+				 :text "&Zapisz jako PNG...\tCtrl+S"
+				 :accelerator (+ SWT/MOD1 (int \S))
+				 :+selection.widget-selected
+				 (when-let [file-name (.open save-dialog)]
+				   (image/save-file file-name)))
+	separator1 (MenuItem. file-menu SWT/SEPARATOR)
 	exit-item (props/doprops (MenuItem. file-menu SWT/PUSH)
 				 :text "&Wyjdź\tCtrl+Q"
 				 :accelerator (+ SWT/MOD1 (int \Q))

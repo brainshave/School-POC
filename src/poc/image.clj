@@ -1,6 +1,6 @@
 (ns poc.image
   (:import (org.eclipse.swt.widgets Display MessageBox)
-	   (org.eclipse.swt.graphics Image ImageData PaletteData)
+	   (org.eclipse.swt.graphics Image ImageData PaletteData ImageLoader)
 	   (org.eclipse.swt SWT)
 	   (poc ByteWorker)))
 
@@ -210,6 +210,13 @@ array of image will happen here."}
 				       (.setMessage "Program nie działa na indeksowanych obrazkach.")
 				       (.open)))))))))
 
+(defn save-file [file-name]
+  (println "Zapisuję" file-name)
+  (when-let [data @*image-data*]
+    (let [loader (ImageLoader.)]
+      (set! (.data loader) (into-array [data]))
+      (.save loader file-name SWT/IMAGE_PNG))))
+    
 
 (def *scroll-delta* (atom [0 0]))
 
