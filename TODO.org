@@ -1,0 +1,8 @@
+* Fixes:
+  1) Fix scrollbar on right.
+  2) Change abstraction for computations (-> "future" ?)
+
+* Features:
+  1) CMYK
+  2) HSL
+  3) Lab

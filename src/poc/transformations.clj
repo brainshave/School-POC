@@ -38,8 +38,7 @@
 					[b? blues blue-hist]]]
       (if-not apply? color-map
 	      ;; cumulus - cumulating histogram
-	      (let [cumulus (reduce #(conj %1 (+ (peek %1) %2))
-				    [(first histogram)] (rest histogram))]
+	      (let [cumulus (vec (reductions + histogram))]
 		(map #(* factor (cumulus %1)) color-map))))))
 
 (def *levels*
