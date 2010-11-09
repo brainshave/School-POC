@@ -108,6 +108,6 @@
 		   (fn [image]
 		     (image/dispose-safely image)
 		     nil))
-	    ;;(.dispose display) ;; tego nie powinno byc
+	    (.dispose display) ;; tego nie powinno byc
 	    )
 	(recur (.isDisposed shell))))))

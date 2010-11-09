@@ -197,6 +197,22 @@
 	      ins (make-controls panel "Wejściowe: " :in-start :in-end)
 	      outs (make-controls panel "Wyjściowe: " :out-start :out-end)]
 	  (props/doprops panel :layout layout))
+
+	"Balans kolorów"
+	(let [panel (Composite. expand-bar SWT/NONE)
+	      layout (MigLayout. "" "[right][center, fill, grow][][]")
+	      make-row (fn [panel text-left text-right key]
+			 (let [label-left (props/doprops (Label. panel SWT/HORIZONTAL)
+							 :text text-left)
+			       scale (Scale. panel SWT/HORIZONTAL)
+			       label-right (props/doprops (Label. panel SWT/HORIZONTAL)
+							  :text text-right)
+			       label-counter (props/doprops (Label. panel SWT/HORIZONTAL)
+							    :layout-data "wrap"
+							    :text "____")]))]
+	  (doall (map #(apply make-row panel %)
+		      [["R" "C" :c] ["G" "M" :m] ["B" "Y" :y] ["W" "K" :k]]))
+	  (props/doprops panel :layout layout))
 	      
 	
 	"Jasność, kontrast, nasycenie"
