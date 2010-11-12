@@ -1,6 +1,27 @@
 (ns poc.workers
   "Abstract workers, that always do only the last action that was
   given to them.")
+	       
+(defn- worker-activity--
+  "Function to work inside workers agent."
+  [state worker]
+  (let [
+	f (first @task)
+	args (rest @task)]
+    (when running
+      (swap! worker #(assoc % :task (promise))) ;; setup a new promise
+						;; for next task
+      (send agent worker-activity worker) ;; send self == looping
+      (apply f state args)))) ;; do actual work
+
+(defn worker-activity
+  [state worker]
+  (let [running (running? worker)
+	[f & args]  @(.task worker)]
+    (when running
+      (reset! (.task worker) (promise)) ;; setup a new promise
+      (send (.agent worker) worker-activity worker)
+      (apply (f state args)))))
 
 (defprotocol IWorker
   (send-task [impl f & args])
@@ -15,31 +36,18 @@
 		    (catch IllegalStateException e ;; value was alerady delivered
 		      (reset! task (deliver (promise) new-task))))))
   (running? [impl] @running)
-  (stop [impl] 
+  (stop [impl] (reset! running false))
   
   clojure.lang.IRef
   (deref [impl] @agent)
   (setValidator [impl f] (.setValidator agent))
   (getValidator [impl] (.getValidator agent))
-  (getWatches [impl] (.getWatches agent))
   (addWatch [impl k f] (.addWatch agent k f))
+  (getWatches [impl] (.getWatches agent))
   (removeWatch [impl k] (.removeWatch agent k)))
 	       
 (defn new-worker [state]
   (Worker. (agent state) (atom (promise)) (atom true)))
-
-	       
-(defn- worker-thread
-  "Function to work inside workers agent."
-  [state worker]
-  (let [{:keys [agent task running]} @worker
-	f (first @task)
-	args (rest @task)]
-    (when running
-      (swap! worker #(assoc % :task (promise))) ;; setup a new promise
-      ;; for next task
-      (send agent worker-thread worker) ;; send self == looping
-      (apply f state args)))) ;; do actual work
 
 (defn worker--
   "Return new worker."
