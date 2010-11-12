@@ -9,11 +9,13 @@
 
 (defn worker-activity
   [state worker]
+  (println "ACt!")
   (let [running (running? worker)
 	[f & args] (-> worker .task deref deref)] ;; deref atom and then promise
     (when running
+      (println "run!")
       (reset! (.task worker) (promise)) ;; setup a new promise
-      (send (.agent worker) worker-activity worker)
+      (send-off (.agent worker) worker-activity worker)
       (apply f state args))))
 
 (deftype Worker [agent task running]
@@ -24,6 +26,7 @@
 	     (let [new-task (cons f args)]
 	       (try (deliver @task new-task)
 		    (catch IllegalStateException e ;; value was alerady delivered
+		      ;;(println "!delivered" e)
 		      (reset! task (deliver (promise) new-task))))))
   (running? [impl] @running)
   (stop [impl]
@@ -42,5 +45,5 @@
 	       
 (defn new-worker [state]
   (let[worker (Worker. (agent state) (atom (promise)) (atom true))]
-    (send (.agent worker) worker-activity worker)
+    (send-off (.agent worker) worker-activity worker)
     worker))

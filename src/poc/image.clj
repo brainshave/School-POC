@@ -1,17 +1,18 @@
 (ns poc.image
+  (:require (poc [workers :as workers]))
   (:import (org.eclipse.swt.widgets Display MessageBox)
 	   (org.eclipse.swt.graphics Image ImageData PaletteData ImageLoader)
 	   (org.eclipse.swt SWT)
 	   (poc ByteWorker)))
 
 (def ^{:doc "Original image data loaded from file."}
-     *original-data* (agent nil))
+     *original-data* (workers/new-worker nil))
 
 (def ^{:doc "Original histograms"}
-     *original-histograms* (agent ^{:size 1} [(int-array 256)
-					      (int-array 256)
-					      (int-array 256)
-					      (int-array 256)]))
+     *original-histograms* (workers/new-worker ^{:size 1} [(int-array 256)
+							   (int-array 256)
+							   (int-array 256)
+							   (int-array 256)]))
 
 (def ^{:doc "A map where key is priority and value is a fn.  Fn takes
   four arguments: First is dereffered value of atom which was added to
@@ -25,7 +26,7 @@
 
 (def ^{:doc "An agent, where *transformations* are applied. Value
   kept its a vector of final color mappings: [reds, greens, blues]"}
-     *color-mappings* (agent *color-mappings-start*))
+     *color-mappings* (workers/new-worker *color-mappings-start*))
 
 (defn ok? [image]
   (and image (not (.isDisposed image))))
@@ -53,13 +54,14 @@
 
 (def ^{:doc "Manipulated image data. Mapping color mappings to byte
 array of image will happen here."}
-     *image-data* (agent nil))
+     *image-data* (workers/new-worker nil))
 
 (add-watch *original-data* :clone-image
 	   (fn [_ _ _ new-data]
+	     (println "Hurra")
 	     (when new-data
-	       (send *image-data* (fn [_] (.clone new-data)))
-	       (send *color-mappings* identity)))) ;; to apply transformations on new image
+	       (workers/send-task *image-data* (fn [_] (.clone new-data)))
+	       (workers/send-task *color-mappings* identity)))) ;; to apply transformations on new image
 
 (defn calc-histograms
   [[r g b rgb] data]
@@ -71,7 +73,7 @@ array of image will happen here."}
 (add-watch *original-data* :calc-original-histograms
 	   (fn [_ _ _ new-data]
 	     (when new-data
-	       (send *original-histograms* calc-histograms new-data))))
+	       (workers/send-task *original-histograms* calc-histograms new-data))))
 					   
 
 (add-watch *color-mappings* :convert-to-bytes
@@ -91,7 +93,7 @@ array of image will happen here."}
 
 (add-watch *color-byte-mappings* :apply-transforms
 	   (fn [_ _ _ color-mappings]
-	     (send *image-data* apply-color-mappings color-mappings)))
+	     (workers/send-task *image-data* apply-color-mappings color-mappings)))
 
 (def *image* (atom nil))
 
@@ -125,18 +127,18 @@ array of image will happen here."}
   (swap! *transformations*  #(assoc % prio [f a]))
   (add-watch a :transfrom-watcher
 	     (fn [_ _ _ _]
-	       (send *color-mappings* recalc-color-mappings))))
+	       (workers/send-task *color-mappings* recalc-color-mappings))))
 
 
 (def ^{:doc "Plot image data and image"}
-     *plot-data* (agent (let [data (ImageData. 256 256 24
+     *plot-data* (workers/new-worker (let [data (ImageData. 256 256 24
 					       (PaletteData. 0xff0000 0xff00 0xff))
 			      image nil]
 			  [data image])))
 
 (add-watch *color-byte-mappings* :plot-plot
 	   (fn [_ _ _ [reds greens blues]]
-	     (send *plot-data* (fn [[data image]]
+	     (workers/send-task *plot-data* (fn [[data image]]
 				 (ByteWorker/plotMaps data
 						      reds greens blues)
 				 (let [new-image (Image. (Display/getDefault)
@@ -147,22 +149,22 @@ array of image will happen here."}
 (def *original-histogram-meta* (atom {:r? true :g? true :b? true :rgb? true :scale 28}))
 
 (def *original-histogram-data*
-     (agent (let [data (ImageData. 256 128 24
+     (workers/new-worker (let [data (ImageData. 256 128 24
 				   (PaletteData. 0xff0000 0xff00 0xff))
 		  image nil]
 	      [data image])))
 
-(def *final-histograms*  (agent ^{:size 1} [(int-array 256)
+(def *final-histograms*  (workers/new-worker ^{:size 1} [(int-array 256)
 					    (int-array 256)
 					    (int-array 256)
 					    (int-array 256)]))
 (add-watch *image-data* :calc-final-histograms
 	   (fn [_ _ _ new-data]
 	     (when new-data
-	       (send *final-histograms* calc-histograms new-data))))
+	       (workers/send-task *final-histograms* calc-histograms new-data))))
 
 (def *final-histogram-data*
-     (agent (let [data (ImageData. 256 128 24
+     (workers/new-worker (let [data (ImageData. 256 128 24
 				   (PaletteData. 0xff0000 0xff00 0xff))
 		  image nil]
 	      [data image])))
@@ -178,25 +180,25 @@ array of image will happen here."}
 
 (add-watch *original-histograms* :plot-histograms
 	   (fn [_ _ _ hists]
-	     (send *original-histogram-data*
-		   plot-histogram hists @*original-histogram-meta*)))
+	     (workers/send-task *original-histogram-data*
+		   plot-histogram [hists @*original-histogram-meta*])))
 
 (add-watch *original-histogram-meta* :plot-histograms
 	   (fn [_ _ _ hist-meta]
-	     (send *original-histogram-data*
-		   plot-histogram @*original-histograms* hist-meta)
-	     (send *final-histogram-data*
-		   plot-histogram @*final-histograms* hist-meta)))
+	     (workers/send-task *original-histogram-data*
+		   plot-histogram [@*original-histograms* hist-meta])
+	     (workers/send-task *final-histogram-data*
+		   plot-histogram [@*final-histograms* hist-meta])))
 
 (add-watch *final-histograms* :plot-histograms
 	   (fn [_ _ _ hists]
-	     (send *final-histogram-data*
-		   plot-histogram hists @*original-histogram-meta*)))
+	     (workers/send-task *final-histogram-data*
+		   plot-histogram [hists @*original-histogram-meta*])))
 
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)
-  (send *original-data*
+  (workers/send-task *original-data*
 	(fn [_] (let [data (ImageData. file-name)]
 		  (if (.. data palette isDirect)
 		    data
