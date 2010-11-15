@@ -1,15 +1,15 @@
 (ns poc.image
-  (:require (poc [workers :as workers]))
+  (:require (poc [workers2 :as workers]))
   (:import (org.eclipse.swt.widgets Display MessageBox)
 	   (org.eclipse.swt.graphics Image ImageData PaletteData ImageLoader)
 	   (org.eclipse.swt SWT)
 	   (poc ByteWorker)))
 
 (def ^{:doc "Original image data loaded from file."}
-     *original-data* (workers/new-worker nil))
+     *original-data* (workers/worker nil))
 
 (def ^{:doc "Original histograms"}
-     *original-histograms* (workers/new-worker ^{:size 1} [(int-array 256)
+     *original-histograms* (workers/worker ^{:size 1} [(int-array 256)
 							   (int-array 256)
 							   (int-array 256)
 							   (int-array 256)]))
@@ -26,7 +26,7 @@
 
 (def ^{:doc "An agent, where *transformations* are applied. Value
   kept its a vector of final color mappings: [reds, greens, blues]"}
-     *color-mappings* (workers/new-worker *color-mappings-start*))
+     *color-mappings* (workers/worker *color-mappings-start*))
 
 (defn ok? [image]
   (and image (not (.isDisposed image))))
@@ -54,7 +54,7 @@
 
 (def ^{:doc "Manipulated image data. Mapping color mappings to byte
 array of image will happen here."}
-     *image-data* (workers/new-worker nil))
+     *image-data* (workers/worker nil))
 
 (add-watch *original-data* :clone-image
 	   (fn [_ _ _ new-data]
@@ -131,8 +131,8 @@ array of image will happen here."}
 
 
 (def ^{:doc "Plot image data and image"}
-     *plot-data* (workers/new-worker (let [data (ImageData. 256 256 24
-					       (PaletteData. 0xff0000 0xff00 0xff))
+     *plot-data* (workers/worker (let [data (ImageData. 256 256 24
+							(PaletteData. 0xff0000 0xff00 0xff))
 			      image nil]
 			  [data image])))
 
@@ -149,12 +149,12 @@ array of image will happen here."}
 (def *original-histogram-meta* (atom {:r? true :g? true :b? true :rgb? true :scale 28}))
 
 (def *original-histogram-data*
-     (workers/new-worker (let [data (ImageData. 256 128 24
+     (workers/worker (let [data (ImageData. 256 128 24
 				   (PaletteData. 0xff0000 0xff00 0xff))
 		  image nil]
 	      [data image])))
 
-(def *final-histograms*  (workers/new-worker ^{:size 1} [(int-array 256)
+(def *final-histograms*  (workers/worker ^{:size 1} [(int-array 256)
 					    (int-array 256)
 					    (int-array 256)
 					    (int-array 256)]))
@@ -164,7 +164,7 @@ array of image will happen here."}
 	       (workers/send-task *final-histograms* calc-histograms new-data))))
 
 (def *final-histogram-data*
-     (workers/new-worker (let [data (ImageData. 256 128 24
+     (workers/worker (let [data (ImageData. 256 128 24
 				   (PaletteData. 0xff0000 0xff00 0xff))
 		  image nil]
 	      [data image])))
@@ -181,19 +181,19 @@ array of image will happen here."}
 (add-watch *original-histograms* :plot-histograms
 	   (fn [_ _ _ hists]
 	     (workers/send-task *original-histogram-data*
-		   plot-histogram [hists @*original-histogram-meta*])))
+		   plot-histogram hists @*original-histogram-meta*)))
 
 (add-watch *original-histogram-meta* :plot-histograms
 	   (fn [_ _ _ hist-meta]
 	     (workers/send-task *original-histogram-data*
-		   plot-histogram [@*original-histograms* hist-meta])
+		   plot-histogram @*original-histograms* hist-meta)
 	     (workers/send-task *final-histogram-data*
-		   plot-histogram [@*final-histograms* hist-meta])))
+		   plot-histogram @*final-histograms* hist-meta)))
 
 (add-watch *final-histograms* :plot-histograms
 	   (fn [_ _ _ hists]
 	     (workers/send-task *final-histogram-data*
-		   plot-histogram [hists @*original-histogram-meta*])))
+		   plot-histogram hists @*original-histogram-meta*)))
 
 
 (defn open-file [file-name]
@@ -212,7 +212,7 @@ array of image will happen here."}
 				    (.setText "Błąd: Indeskowany obrazek")
 				  (.setMessage "Program nie działa na indeksowanych obrazkach.")
 				  (.open)))))))
-   [file-name]))
+   file-name))
 
 (defn save-file [file-name]
   (println "Zapisuję" file-name)

@@ -35,13 +35,10 @@
 	running (atom true)
 	thread (Thread. #(when @running
 			   (try
-			     (println "Try!")
 			     (let [[f & args] @h]
-			       (println "Swap! " state f args)
 			       (apply swap! state f args))
 			     (catch Exception e
 			       (.printStackTrace e)))
-			   (println "recur!")
 			   (recur)))]
     (.start thread)
     (reify

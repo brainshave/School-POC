@@ -215,7 +215,7 @@
 	  (props/doprops panel :layout layout))
 	      
 	
-	"Jasność, kontrast, nasycenie"
+	"Jasność, kontrast, gamma"
 	(let [panel (Composite. expand-bar SWT/NONE)
 	      layout (MigLayout. "" "[right][fill,30!][left,fill,grow]")
 	      brightness-label (props/doprops (Label. panel SWT/HORIZONTAL)
