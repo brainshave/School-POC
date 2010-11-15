@@ -61,7 +61,7 @@ array of image will happen here."}
 	     (println "Hurra")
 	     (when new-data
 	       (workers/send-task *image-data* (fn [_] (.clone new-data)))
-	       (workers/send-task *color-mappings* identity)))) ;; to apply transformations on new image
+	       (workers/send-task *color-mappings*)))) ;; to apply transformations on new image
 
 (defn calc-histograms
   [[r g b rgb] data]
@@ -198,19 +198,21 @@ array of image will happen here."}
 
 (defn open-file [file-name]
   (println "Otwieram" file-name)
-  (workers/send-task *original-data*
-	(fn [_] (let [data (ImageData. file-name)]
-		  (if (.. data palette isDirect)
-		    data
-		    (.asyncExec (Display/getDefault)
-				#(-> (Display/getDefault)
-				     .getShells
-				     first
-				     (MessageBox. (reduce bit-or [SWT/ICON_ERROR, SWT/OK]))
-				     (doto
-					 (.setText "Błąd: Indeskowany obrazek")
-				       (.setMessage "Program nie działa na indeksowanych obrazkach.")
-				       (.open)))))))))
+  (workers/send-task
+   *original-data*
+   (fn [_ file-name] (let [data (ImageData. file-name)]
+	     (if (.. data palette isDirect)
+	       data
+	       (.asyncExec (Display/getDefault)
+			   #(-> (Display/getDefault)
+				.getShells
+				first
+				(MessageBox. (reduce bit-or [SWT/ICON_ERROR, SWT/OK]))
+				(doto
+				    (.setText "Błąd: Indeskowany obrazek")
+				  (.setMessage "Program nie działa na indeksowanych obrazkach.")
+				  (.open)))))))
+   [file-name]))
 
 (defn save-file [file-name]
   (println "Zapisuję" file-name)

@@ -2,6 +2,19 @@
   "Abstract workers, that always do only the last action that was
   given to them.")
 
+(defn lie
+  "A modification of a promise that accepts multiple delivers."
+  []
+  (let [d (java.util.concurrent.CountDownLatch. 1)
+	v (atom nil)]
+    (reify clojure.lang.IDeref
+	   (deref [_] (.await d) @v)
+	   clojure.lang.IFn
+	   (invoke [this x] (locking d
+			      (reset! v x)
+			      (.countDown d)
+			      this)))))
+
 (defprotocol IWorker
   (send-task [impl] [impl f] [impl f args])
   (running? [impl])
@@ -11,10 +24,10 @@
   [state worker]
   (println "ACt!")
   (let [running (running? worker)
-	[f & args] (-> worker .task deref deref)] ;; deref atom and then promise
+	[f & args] @@(.task worker)] ;; deref atom and then lie
     (when running
-      (println "run!")
-      (reset! (.task worker) (promise)) ;; setup a new promise
+      (println "run!" f args)
+      (swap! (.task worker) (fn [_] (lie))) ;; setup a new promise
       (send-off (.agent worker) worker-activity worker)
       (apply f state args))))
 
@@ -22,12 +35,7 @@
   IWorker
   (send-task [impl] (send-task impl identity nil))
   (send-task [impl f] (send-task impl f nil))
-  (send-task [impl f args]
-	     (let [new-task (cons f args)]
-	       (try (deliver @task new-task)
-		    (catch IllegalStateException e ;; value was alerady delivered
-		      ;;(println "!delivered" e)
-		      (reset! task (deliver (promise) new-task))))))
+  (send-task [impl f args] (deliver @task (cons f args)))
   (running? [impl] @running)
   (stop [impl]
 	(reset! running false)

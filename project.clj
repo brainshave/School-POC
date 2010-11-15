@@ -1,7 +1,7 @@
 (defproject poc "0.1.0-SNAPSHOT"
   :description "Project for Digital Image Processing course (Przetwarzanie Obrazów Cyfrowych in Polish)"
-  :aot [#"poc\..*"]
-  :main poc.poc
+;;  :aot [#"poc\..*"]
+  ;; :main poc.poc
   :omit-source true
   :jvm-opts ["-Xmx1g"]
   :dependencies [[org.clojure/clojure "1.2.0"]
