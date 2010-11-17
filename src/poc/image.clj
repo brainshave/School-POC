@@ -1,5 +1,6 @@
 (ns poc.image
-  (:require (poc [workers2 :as workers]))
+  (:require (poc [workers2 :as workers]
+		 [whole-image :as whole]))
   (:import (org.eclipse.swt.widgets Display MessageBox)
 	   (org.eclipse.swt.graphics Image ImageData PaletteData ImageLoader)
 	   (org.eclipse.swt SWT)
@@ -80,20 +81,23 @@ array of image will happen here."}
 	   (fn [_ _ _ mappings]
 	     (reset! *color-byte-mappings* (map to-byte-array mappings))))
 
-(defn apply-color-mappings [image-data mappings] ;; przerobić tak, by przyjmowało tylko image-data a reszte sobie dereferowało
+(defn apply-color-mappings [image-data] ;; przerobić tak, by przyjmowało tylko image-data a reszte sobie dereferowało
   (comment (print "Start do-color-mapping, size:"
 		  (count (.data image-data)) "... "))
   (let [original-data @*original-data*
 	data image-data
-	[reds greens blues] mappings]
-    (if (and original-data image-data)
+	[reds greens blues] @*color-byte-mappings*]
+    (when (and original-data image-data)
       (ByteWorker/applyMaps original-data data
-			    reds greens blues)) ;; TODO tutaj dodać dod. transformacje
+			    reds greens blues)
+      (whole/perform-operations image-data)) ;; TODO tutaj dodać dod. transformacje
     image-data))
 
 (add-watch *color-byte-mappings* :apply-transforms
-	   (fn [_ _ _ color-mappings]
-	     (workers/send-task *image-data* apply-color-mappings color-mappings)))
+	   (fn [_ _ _ _]
+	     (workers/send-task *image-data* apply-color-mappings)))
+
+(whole/add-operation-watches #(workers/send-task *image-data* apply-color-mappings))
 
 (def *image* (atom nil))
 

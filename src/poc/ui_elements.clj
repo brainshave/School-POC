@@ -1,7 +1,8 @@
 (ns poc.ui-elements
   (:require (little-gui-helper [properties :as props])
 	    (poc [image :as image]
-		 [transformations :as transformations]))
+		 [transformations :as transformations]
+		 [whole-image :as whole]))
   (:import (org.eclipse.swt.widgets Menu MenuItem
 				    FileDialog ExpandBar ExpandItem
 				    Composite Label Scale Canvas Display
@@ -198,31 +199,6 @@
 	      outs (make-controls panel "Wyjściowe: " :out-start :out-end)]
 	  (props/doprops panel :layout layout))
 
-	"Balans kolorów"
-	(let [panel (Composite. expand-bar SWT/NONE)
-	      layout (MigLayout. "" "[center][center, fill, grow][center][fill, 30!]")
-	      make-row (fn [panel text-left text-right key]
-			 (let [label-left (props/doprops (Label. panel SWT/HORIZONTAL)
-							 :text text-left)
-			       scale (Scale. panel SWT/HORIZONTAL)
-			       label-right (props/doprops (Label. panel SWT/HORIZONTAL)
-							  :text text-right)
-			       label-counter (props/doprops (Label. panel SWT/HORIZONTAL)
-							    :layout-data "wrap"
-							    :text "0")]
-			   (props/doprops scale
-					  :minimum 0
-					  :maximum 510
-					  :selection 255
-					  :+selection.widget-selected
-					  (do (.setText label-counter
-							(str (- (.getSelection scale)
-								255)))))))]
-	  (doall (map #(apply make-row panel %)
-		      [["R" "C" :c] ["G" "M" :m] ["B" "Y" :y] ["W" "K" :k]]))
-	  (props/doprops panel :layout layout))
-	      
-	
 	"Jasność, kontrast, gamma"
 	(let [panel (Composite. expand-bar SWT/NONE)
 	      layout (MigLayout. "" "[right][fill,30!][left,fill,grow]")
@@ -251,7 +227,33 @@
 					(+ (/ (- selection 100) 10) 1))))
 	  (props/doprops panel :layout layout))
 	
-	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)))
+	"Podgląd korekcji kolorów" (make-bcg-plot expand-bar)
+
+	"CMYK"
+	(let [panel (Composite. expand-bar SWT/NONE)
+	      layout (MigLayout. "" "[center][center, fill, grow][center][fill, 30!]")
+	      make-row (fn [panel text-left text-right key]
+			 (let [label-left (props/doprops (Label. panel SWT/HORIZONTAL)
+							 :text text-left)
+			       scale (Scale. panel SWT/HORIZONTAL)
+			       label-right (props/doprops (Label. panel SWT/HORIZONTAL)
+							  :text text-right)
+			       label-counter (props/doprops (Label. panel SWT/HORIZONTAL)
+							    :layout-data "wrap"
+							    :text "0")]
+			   (props/doprops scale
+					  :minimum 0
+					  :maximum 510
+					  :selection 255
+					  :+selection.widget-selected
+					  (let [v (- (.getSelection scale)
+						     255)]
+					    (.setText label-counter (str v))
+					    (swap! whole/cmyk-control
+						   #(assoc % key v))))))]
+	  (doall (map #(apply make-row panel %)
+		      [["R" "C" :c] ["G" "M" :m] ["B" "Y" :y] ["W" "K" :k]]))
+	  (props/doprops panel :layout layout))))
     
 
 (defn make-expand-bar [shell]
