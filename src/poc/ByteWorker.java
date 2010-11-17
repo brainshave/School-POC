@@ -9,6 +9,13 @@ public class ByteWorker {
 	return data.palette.redMask == 0xff;
     }
 
+    public static final byte toByte(int i) {
+	if (i > 255) return -1;
+	if (i > 127) return (byte)(i - 256);
+	if (i < 0)   return 0;
+	return (byte)i;
+    }
+
     public static final void applyMaps
 	(ImageData orig, ImageData mod,
 	 byte[] rmap, byte[] gmap, byte[] bmap)
@@ -214,6 +221,66 @@ public class ByteWorker {
 		    plot[colorPoint] = plot[colorPoint] == 0 ? (byte) 64 : (byte) -1;
 		}
 	    }
+	}
+    }
+
+    public static final void cmykCorrection
+	(ImageData in, ImageData out,
+	 int corrC, int corrM, int corrY, int corrK)
+    {
+	if (isBGR(in)) {
+	    int tmp = corrC;
+	    corrC = corrY;
+	    corrY = tmp;
+	}
+
+	final int height = in.height;
+	final int width = in.width;
+	final byte[] in_data = in.data;
+	final byte[] out_data = out.data;
+	final int n = in_data.length;
+	final int line_width = in.bytesPerLine;
+	
+	if(height != out.height || width != out.width
+	   || n != out_data.length || line_width != out.bytesPerLine) {
+	    System.err.println("Images don't match");
+	}
+
+	final int data_width =  3*width;
+	final int padding = line_width - data_width;
+	int i = 0;
+	int r, g, b, c, m, y, k, kkk;
+	for (int line_end = data_width; line_end < n; line_end += line_width) {
+	    while (i < line_end) {
+		r = in_data[i];
+		g = in_data[i+1];
+		b = in_data[i+2];
+
+		if (r < 0) r += 256; // converting from bytes (-128..127)
+		if (g < 0) g += 256;
+		if (b < 0) b += 256;
+
+		c = 255 - r;
+		m = 255 - g;
+		y = 255 - b;
+		///k = r < g ? (r < b ? r : b) : (g < b ? g : b);
+		k = c;
+		if (m < k) k = m;
+		if (y < k) k = y;
+				
+		kkk = 255 - k - corrK;
+		if (kkk < 0) kkk = 0;
+		
+		// ew. optymalizacja: 2 wym LUT
+		r -= (corrC * kkk) >> 8;
+		g -= (corrM * kkk) >> 8;
+		b -= (corrY * kkk) >> 8;
+
+		out_data[i++] = toByte(r);
+		out_data[i++] = toByte(g);
+		out_data[i++] = toByte(b);
+	    }
+	    i += padding;
 	}
     }
 }

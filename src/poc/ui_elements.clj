@@ -200,7 +200,7 @@
 
 	"Balans kolorów"
 	(let [panel (Composite. expand-bar SWT/NONE)
-	      layout (MigLayout. "" "[right][center, fill, grow][][]")
+	      layout (MigLayout. "" "[center][center, fill, grow][center][fill, 30!]")
 	      make-row (fn [panel text-left text-right key]
 			 (let [label-left (props/doprops (Label. panel SWT/HORIZONTAL)
 							 :text text-left)
@@ -209,7 +209,15 @@
 							  :text text-right)
 			       label-counter (props/doprops (Label. panel SWT/HORIZONTAL)
 							    :layout-data "wrap"
-							    :text "____")]))]
+							    :text "0")]
+			   (props/doprops scale
+					  :minimum 0
+					  :maximum 510
+					  :selection 255
+					  :+selection.widget-selected
+					  (do (.setText label-counter
+							(str (- (.getSelection scale)
+								255)))))))]
 	  (doall (map #(apply make-row panel %)
 		      [["R" "C" :c] ["G" "M" :m] ["B" "Y" :y] ["W" "K" :k]]))
 	  (props/doprops panel :layout layout))
@@ -254,7 +262,7 @@
 	(props/doprops expand-item
 		       :text label
 		       :control panel
-		       :expanded true
+		       :expanded false
 		       :height (-> panel (.computeSize SWT/DEFAULT SWT/DEFAULT) .y))))
     (props/doprops expand-bar nil)
     (props/doprops scroll

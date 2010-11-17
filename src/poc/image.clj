@@ -80,7 +80,7 @@ array of image will happen here."}
 	   (fn [_ _ _ mappings]
 	     (reset! *color-byte-mappings* (map to-byte-array mappings))))
 
-(defn apply-color-mappings [image-data mappings]
+(defn apply-color-mappings [image-data mappings] ;; przerobić tak, by przyjmowało tylko image-data a reszte sobie dereferowało
   (comment (print "Start do-color-mapping, size:"
 		  (count (.data image-data)) "... "))
   (let [original-data @*original-data*
@@ -88,7 +88,7 @@ array of image will happen here."}
 	[reds greens blues] mappings]
     (if (and original-data image-data)
       (ByteWorker/applyMaps original-data data
-			    reds greens blues))
+			    reds greens blues)) ;; TODO tutaj dodać dod. transformacje
     image-data))
 
 (add-watch *color-byte-mappings* :apply-transforms
