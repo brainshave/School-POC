@@ -272,9 +272,9 @@ public class ByteWorker {
 		if (kkk < 0) kkk = 0;
 		
 		// ew. optymalizacja: 2 wym LUT
-		r -= (corrC * kkk) >> 8;
-		g -= (corrM * kkk) >> 8;
-		b -= (corrY * kkk) >> 8;
+		r -= ((corrC * kkk) >> 8) + corrK;
+		g -= ((corrM * kkk) >> 8) + corrK;
+		b -= ((corrY * kkk) >> 8) + corrK;
 
 		out_data[i++] = toByte(r);
 		out_data[i++] = toByte(g);
