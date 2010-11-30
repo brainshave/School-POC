@@ -7,7 +7,7 @@
 		 [org.eclipse.swt/swt-windows "3.6" :classifier "x86"]
 		 [com.miglayout/miglayout "3.7.3.1" :classifier "swt"]]
   :dev-dependencies [[swank-clojure "1.2.1"]]
-  :aot [#"poc\..*"]
+  ;;:aot [#"poc\..*"]
   :main poc.core
   :source-path "src/clojure"
   :java-source-path "src/java"
