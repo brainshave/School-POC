@@ -8,10 +8,13 @@
 
 (defn toolbar-buttons [toolbar]
   (doall (map (fn [[label]]
-		(let [button (ToolItem. toolbar SWT/PUSH)]
-		  (doprops button :text label)))
+		(if label
+		  (let [button (ToolItem. toolbar SWT/PUSH)]
+		    (doprops button :text label))
+		  (ToolItem. toolbar SWT/SEPARATOR)))
 	      [["Otwórz"]
 	       ["Zapisz"]
+	       []
 	       ["Zastosuj"]
 	       ["Cofnij"]])))
 
