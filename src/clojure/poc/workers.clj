@@ -1,11 +1,11 @@
-(ns poc.workers2)
+(ns poc.workers)
 
 (defn hat
   "Returns an object similar promise, but:
    1. You can deliver value many times. old value will be forgotten.
    2. You can deref value only once. After deref, box is emptyied.
 
-   So, looks more like an opposite of \"promise\"."
+   So, it looks more like an opposite of \"promise\"."
   []
   (let [s (java.util.concurrent.Semaphore. 0 true)
 	a (atom nil)]
@@ -27,7 +27,17 @@
 (defprotocol IWorker
   (-send-task [impl task])
   (running? [impl])
+  (start [impl])
   (stop [impl]))
+
+(def ^{:doc "List of IWorker objects"}
+     *workers* (atom ()))
+
+(defn start-all-workers []
+  (doseq [w @*workers*] (start w)))
+
+(defn stop-all-workers []
+  (doseq [w @*workers*] (stop w)))
 
 (defn worker [x]
   (let [state (atom x)
@@ -39,23 +49,24 @@
 			       (apply swap! state f args))
 			     (catch Exception e
 			       (.printStackTrace e)))
-			   (recur)))]
-    ;;(.start thread)
-    (reify
-     IWorker
-     (-send-task [_ task] (h task))
-     (running? [_] @running)
-     (stop [_]
-	   (reset! running false)
-	   (.interrupt thread))
-     
-     clojure.lang.IRef
-     (deref [_] @state)
-     (setValidator [_ f] (.setValidator state f))
-     (getValidator [_] (.getValidator state))
-     (addWatch [_ k f] (.addWatch state k f))
-     (getWatches [_] (.getWatches state))
-     (removeWatch [_ k] (.removeWatch state k)))))
+			   (recur)))
+	worker (reify IWorker
+		      (-send-task [_ task] (h task))
+		      (running? [_] @running)
+		      (start [this] (if (running? this) (.start thread)))
+		      (stop [_]
+			    (reset! running false)
+			    (.interrupt thread))
+		      
+		      clojure.lang.IRef
+		      (deref [_] @state)
+		      (setValidator [_ f] (.setValidator state f))
+		      (getValidator [_] (.getValidator state))
+		      (addWatch [_ k f] (.addWatch state k f))
+		      (getWatches [_] (.getWatches state))
+		      (removeWatch [_ k] (.removeWatch state k)))]
+    (swap! *workers* conj worker)
+    worker))
 
 (defn send-task
   ([worker]

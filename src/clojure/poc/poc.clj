@@ -5,6 +5,7 @@
 	    (poc [ui-elements :as ui]
 		 [image :as image]
 		 [transformations :as transformations]))
+  (:use poc.swt)
   (:import (org.eclipse.swt.widgets Display Shell Menu MenuItem
 				    FileDialog Canvas Label)
 	   (org.eclipse.swt.layout FillLayout)
@@ -78,21 +79,6 @@
     (.open shell)
     shell))
 
-(defn swt-loop []
-  (try (let [display (Display/getDefault)]
-	 (if-not (.readAndDispatch display)
-	   (.sleep display)))
-       (catch Exception e (.printStackTrace e)))
-  (recur))
-
-(defn start [& args]
-  (let [display (Display/getDefault)]
-    (.asyncExec display
-		#(let [shell (make-gui)]
-		   (transformations/add-all-transformations)
-		   (if-let [file-name (first args)]
-		     (image/open-file file-name))
-		   (.open shell)))))
 (defn -main [& args]
   (let [display (Display/getDefault)
 	shell (make-gui)]
