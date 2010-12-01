@@ -69,7 +69,8 @@
   *candies* vectors. Returns data as-is."
   ([] (dorun (map #(remove-watch % :run-operations)
 		  (:watched @*candies*)))
-     (reset! *candies* empty-candies))
+     (reset! *candies* empty-candies)
+     (reset-tools))
   ([data] (cancel-changes) data))
 
   

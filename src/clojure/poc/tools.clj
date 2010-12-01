@@ -60,16 +60,19 @@
     (doprops panel :layout layout)
     {:panel panel :sliders sliders}))
 
-(defn reset-slider [[_ display slider] [_ value _ _ f]]
-  (doprops slider :selection value))
-  ;; resetting display should will be triggered by selectionListerner
+(defn reset-slider
+  "Takes slider-spec, slider-row and resets the latter."
+  [[_ value _ _ f] [_ display slider]]
+  (async-exec #(do (doprops slider :selection value)
+		   (doprops display :text (str (f value))))))
 
 (defn reset-tool
   "Takes tool structure and tool-panel structure and resets its to defaults"
-  [{:keys [slider-specs values function]}
-   {:keys [sliders]}]
+  [[{:keys [slider-specs values function init]}
+    {:keys [sliders]}]]
   (remove-all-watchers values)
   (dorun (map reset-slider slider-specs sliders))
+  (reset! values init)
   (add-watch values :first-change
 	     (fn [k a _ _]
 	       ;;(add-operation function a)
@@ -93,4 +96,6 @@
   (map (fn [[tool tool-panel]]
 	 [(:name tool) (:panel tool-panel)])
        (vals @*tools*)))
-  
+
+(defn reset-tools []
+  (dorun (map reset-tool (vals @*tools*))))
