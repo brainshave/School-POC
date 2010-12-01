@@ -1,4 +1,4 @@
-(defproject poc "0.1.0-SNAPSHOT"
+(defproject poc "0.2.0-SNAPSHOT"
   :description "Project for Digital Image Processing course (Przetwarzanie Obrazów Cyfrowych in Polish)"
   :repositories ["toochain.eu" "http://toolchain.eu/maven2/"]
   :dependencies [[org.clojure/clojure "1.2.0"]
