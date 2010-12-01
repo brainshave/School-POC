@@ -3,20 +3,20 @@
 
 (import-swt)
 
-(def ^{:doc "Main image data, holds original image or image with applied
-  transformations."}
-     *data* (ref (worker nil)))
+(defonce ^{:doc "Holds three ImageData objects in a vector.
 
-(def ^{:doc "Preview data, will be swapped with *data* when applying
-  transformations."}
-     *preview-data* (ref (worker nil)))
+  First is original image data with eventually applied changes (after
+  applying, changes are unrevertable), second is buffer meant to be
+  displayed on screen (has applied preview transformations), third is
+  a temporary buffer used when applying transformations."}
+     *data* (worker [nil nil nil]))
 
 (defn open-file [f]
-  (future (let [data (ImageData. f)]
-	    (if (.. data palette isDirect)
-	      (let [data-clone (.clone data)]
-		(send-task @*data* (fn [_] data))
-		(send-task @*preview-data* (fn [_] data-clone)))
-	      (message "Błąd: Indeskowany obrazek"
-		       "Program nie działa na indeksowanych obrazkach.")))))
+  (let [data (ImageData. f)]
+    (if (.. data palette isDirect)
+      (let [clone1 (future (.clone data))
+	    clone2 (future (.clone data))] 
+	(send-task *data* (fn [_] [data @clone1 @clone2])))
+      (message "Błąd: Indeskowany obrazek"
+	       "Program nie działa na indeksowanych obrazkach."))))
 

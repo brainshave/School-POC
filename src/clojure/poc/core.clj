@@ -1,10 +1,13 @@
 (ns poc.core
   (:gen-class)
-  (:use (poc swt main-window)))
+  (:use (poc swt main-window
+	     [workers :only [start-all-workers stop-all-workers]])))
 
 (defn start []
   (async-exec main-window))
 
 
 (defn -main [& args]
-  (swt-loop (main-window)))
+  (start-all-workers)
+  (swt-loop (main-window))
+  (stop-all-workers))

@@ -1,5 +1,6 @@
 (ns poc.swt
-  "Functions for Happy SWT User")
+  "Functions for Happy SWT User"
+  (:use (poc utils)))
   
 (defn import-swt
   "Convenience function to import all needed SWT classes in project"
@@ -11,8 +12,8 @@
 	   Composite Label Scale Canvas Display
 	   Button ToolBar ToolItem]
 	  [org.eclipse.swt.custom ScrolledComposite]
-	  [org.eclipse.swt.graphics Color GC ImageData]
-	  [org.eclipse.swt.events SelectionListener PaintListener]
+	  [org.eclipse.swt.graphics Color GC ImageData Image]
+	  [org.eclipse.swt.events SelectionListener PaintListener MouseMoveListener]
 	  [net.miginfocom.swt MigLayout]))
 
 ;; import swt here
@@ -43,6 +44,8 @@
   [f & args]
   (.asyncExec (default-display) #(apply f args)))
 
+(defn dispose-safely [w]
+  (async-exec #(if (ok? w) (.dispose w))))
 
 (defn message [title body]
   (async-exec #(-> (default-display) .getShells first

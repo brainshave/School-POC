@@ -37,7 +37,8 @@
   (doseq [w @*workers*] (start w)))
 
 (defn stop-all-workers []
-  (doseq [w @*workers*] (stop w)))
+  (doseq [w @*workers*] (stop w))
+  (reset! *workers* ()))
 
 (defn worker [x]
   (let [state (atom x)
