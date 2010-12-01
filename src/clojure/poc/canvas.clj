@@ -13,7 +13,7 @@
   *scroll-delta* (atom [0 0]))
 
 (add-watch *data* :realign-scroll-delta
-	   (fn [_ _ [old] [new]]
+	   (fn [_ _ [old _ _] [new _ _]]
 	     (when (or (not old)
 		       (not= (.width old) (.width new))
 		       (not= (.height old) (.width new)))

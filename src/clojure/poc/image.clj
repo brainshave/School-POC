@@ -11,6 +11,11 @@
   a temporary buffer used when applying transformations."}
      *data* (worker [nil nil nil]))
 
+(defonce ^{:doc "A map. Operations that operate on previews are kept
+  under :fns and watched refs are kept under :watched."}
+  *candies* (atom {:fns [] :watched []}))
+
+
 (defn open-file [f]
   (let [data (ImageData. f)]
     (if (.. data palette isDirect)
@@ -20,3 +25,42 @@
       (message "Błąd: Indeskowany obrazek"
 	       "Program nie działa na indeksowanych obrazkach."))))
 
+(defn run-operations
+  "Runs through all :fns in *candies* on *data*.
+
+  Fns are called with three arguments: current value of an atom
+  associated with operation (with add-operation), data-in,
+  data-out (both of type org.eclipse.swt.graphics.ImageData). First
+  invocation uses orignal data as data-in and preview-data as
+  data-out. Next invocation uses preview-data as data-in and tmp as
+  data-out. From this point next invocations use interchangeably pairs
+  of [preview tmp] and [tmp preview] as [data-in data-out].
+
+  Returned value is [original last-used-as-data-out the-other buffer]."
+  [[original preview tmp]]
+  (let [{:keys [fns watched]} @*candies*
+	circle (cycle (list preview tmp))
+	inputs (cons original circle)
+	outputs circle]
+    (doall (map #(%1 @%2 %3 %4)
+		fns watched inputs outputs))
+    (if (-> fns count even?)
+      [original tmp preview]
+      [original preview tmp])))
+	 
+
+(defn add-operation
+  "Adds operation f to operations and starts watching a. Any change to
+  a will fire run-operations automatically.
+
+  f should be a function of value of a, data-in, data-out."
+  [f a]
+  (swap! *candies* (fn [candies]
+		     (assoc candies
+		       :fns (conj (:fns candies) f)
+		       :watched (conj (:watched candies) a))))
+  (add-watch a :run-operations
+	     (fn [& _] (send-task *data* run-operations))))
+
+(defn apply-changes
+  [])
