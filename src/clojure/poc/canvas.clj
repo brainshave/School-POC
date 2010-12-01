@@ -16,7 +16,7 @@
 	   (fn [_ _ [old _ _] [new _ _]]
 	     (when (or (not old)
 		       (not= (.width old) (.width new))
-		       (not= (.height old) (.width new)))
+		       (not= (.height old) (.height new)))
 	       (reset! *scroll-delta* [0 0]))))
 
 (add-watch *data* :recreate-image

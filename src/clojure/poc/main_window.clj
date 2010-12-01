@@ -1,7 +1,8 @@
 (ns poc.main-window
   "Main window for this application."
   (:use (poc swt image
-	     [canvas :only [canvas]])
+	     [canvas :only [canvas]]
+	     [workers :only [send-task]])
 	(little-gui-helper properties)
 	(poc)))
 
@@ -18,13 +19,16 @@
 		  (let [button (ToolItem. toolbar SWT/PUSH)]
 		    (doprops button
 			     :text label
-			     :+selection.widget-selected (f shell)))
+			     :+selection.widget-selected
+			     (try (f shell)
+				  (catch IllegalArgumentException e
+				    (f)))))
 		  (ToolItem. toolbar SWT/SEPARATOR)))
 	      [["Otwórz" open-file-dialog]
 	       ["Zapisz"]
 	       []
-	       ["Zastosuj"]
-	       ["Cofnij"]])))
+	       ["Zastosuj" #(send-task *data* apply-changes)]
+	       ["Cofnij" #(send-task *data* cancel-changes)]])))
 
 (defn main-window
   "Create main window."

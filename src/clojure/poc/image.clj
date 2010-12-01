@@ -11,9 +11,11 @@
   a temporary buffer used when applying transformations."}
      *data* (worker [nil nil nil]))
 
+(def empty-candies {:fns [] :watched []})
+
 (defonce ^{:doc "A map. Operations that operate on previews are kept
   under :fns and watched refs are kept under :watched."}
-  *candies* (atom {:fns [] :watched []}))
+  *candies* (atom empty-candies))
 
 
 (defn open-file [f]
@@ -42,7 +44,7 @@
 	circle (cycle (list preview tmp))
 	inputs (cons original circle)
 	outputs circle]
-    (doall (map #(%1 @%2 %3 %4)
+    (dorun (map #(%1 @%2 %3 %4)
 		fns watched inputs outputs))
     (if (-> fns count even?)
       [original tmp preview]
@@ -62,5 +64,18 @@
   (add-watch a :run-operations
 	     (fn [& _] (send-task *data* run-operations))))
 
+(defn cancel-changes
+  "Unregisters watches on all :watched from *candies* and clears the
+  *candies* vectors. Returns data as-is."
+  ([] (dorun (map #(remove-watch % :run-operations)
+		  (:watched @*candies*)))
+     (reset! *candies* empty-candies))
+  ([data] (cancel-changes) data))
+
+  
 (defn apply-changes
-  [])
+  "Does what cancel-changes but swaps preview with base images (so new
+  base image is that one with applied all changes)."
+  [[original preview tmp]]
+  (cancel-changes)
+  [preview original tmp])
