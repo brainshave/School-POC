@@ -12,10 +12,11 @@
   image should be placed."}
   *scroll-delta* (atom [0 0]))
 
-(add-watch *data* :realing-scroll-delta
+(add-watch *data* :realign-scroll-delta
 	   (fn [_ _ [old] [new]]
-	     (when (or (not= (.width old) (.width new))
-		     (not= (.height old) (.width new)))
+	     (when (or (not old)
+		       (not= (.width old) (.width new))
+		       (not= (.height old) (.width new)))
 	       (reset! *scroll-delta* [0 0]))))
 
 (add-watch *data* :recreate-image
