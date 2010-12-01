@@ -7,6 +7,17 @@
 
 (defonce *image* (atom nil))
 
+
+(defonce ^{:doc "Holds a vector of x and y of left upper corner where
+  image should be placed."}
+  *scroll-delta* (atom [0 0]))
+
+(add-watch *data* :realing-scroll-delta
+	   (fn [_ _ [old] [new]]
+	     (when (or (not= (.width old) (.width new))
+		     (not= (.height old) (.width new)))
+	       (reset! *scroll-delta* [0 0]))))
+
 (add-watch *data* :recreate-image
 	   (fn [_ _ _ [_ preview-data _]]
 	     (swap! *image* (fn [current new]
@@ -14,8 +25,6 @@
 			      (if new (Image. (default-display) new)))
 		    preview-data)))
 
-(defn bounds [w]
-  (let [b (.getBounds w)] [(.width b) (.height b)]))
 
 (defn repaint [gc canvas image [x y]]
   (if (every? ok? [gc canvas image])
@@ -30,9 +39,7 @@
     (if (every? ok? [gc canvas])
       (.fillRectangle gc (.getBounds canvas)))))
 
-(defonce *scroll-delta* (atom [0 0 ]))
-
-(let [previous-point (atom nil)]
+(let [previous-point (atom nil)] ;; kind of like "static" variable in C...
   (defn scroll
     "Scroll canvas without flicker."
     [event canvas]
@@ -47,7 +54,7 @@
 				    [(+ act-x scroll-x)
 				     (+ act-y scroll-y)]))))
 	(reset! previous-point [x y]))
-      (reset! previous-point nil))))
+      (reset! previous-point nil)))) ;; button released, reset previous-point
       
     
 (defn canvas [parent]

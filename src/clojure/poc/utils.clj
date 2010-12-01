@@ -5,3 +5,7 @@
   "Check if w is not null and not disposed."
   [w]
   (and w (not (.isDisposed w))))
+
+
+(defn bounds [w]
+  (let [b (.getBounds w)] [(.width b) (.height b)]))
