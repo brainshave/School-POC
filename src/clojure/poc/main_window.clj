@@ -1,8 +1,9 @@
 (ns poc.main-window
   "Main window for this application."
-  (:use (poc swt image
+  (:use (poc swt image tools
 	     [canvas :only [canvas]]
 	     [workers :only [send-task]])
+	(poc.tools bcg)
 	(little-gui-helper properties)
 	(poc)))
 
@@ -30,6 +31,17 @@
 	       ["Zastosuj" #(send-task *data* apply-changes)]
 	       ["Cofnij" #(send-task *data* cancel-changes)]])))
 
+(defn expand-bar [parent]
+  (let [expand-bar (ExpandBar. parent SWT/V_SCROLL)]
+    (doseq [[label panel] (tool-panels expand-bar)]
+      (let [expand-item (ExpandItem. expand-bar SWT/NONE)]
+	(doprops expand-item
+		       :text label
+		       :control panel
+		       :expanded false
+		       :height (-> panel (.computeSize SWT/DEFAULT SWT/DEFAULT) .y))))
+    expand-bar))
+
 (defn main-window
   "Create main window."
   []
@@ -39,7 +51,7 @@
 	toolbar (ToolBar. shell (reduce bit-or [SWT/HORIZONTAL SWT/WRAP SWT/FLAT]))
 	toolbar-buttons (toolbar-buttons toolbar shell)
 	;;expand-bar-scroll (ScrolledComposite. shell (bit-or SWT/BORDER SWT/V_SCROLL))
-	expand-bar (ExpandBar. shell SWT/V_SCROLL)]
+	expand-bar (expand-bar shell)]
     (doprops canvas
 	     :layout-data "span 1 2, grow"
 	     :background (Color. (default-display) 100 100 100))

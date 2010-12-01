@@ -1,5 +1,5 @@
 (ns poc.image
-  (:use (poc workers swt)))
+  (:use (poc workers swt tools)))
 
 (import-swt)
 
