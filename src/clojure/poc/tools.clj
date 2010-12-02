@@ -1,6 +1,6 @@
 (ns poc.tools
   (:use (little-gui-helper properties)
-	(poc swt utils image)))
+	(poc swt utils image workers)))
 
 (import-swt)
 
@@ -75,9 +75,9 @@
   (reset! values init)
   (add-watch values :first-change
 	     (fn [k a _ _]
-	       (add-operation function a)
-	       (println "First change")
-	       (remove-watch a k)))) ;; add to *candies* only once
+	       (remove-watch a k) ;; add operation only once
+	       (add-operation function a) ;; a will be watched
+	       (send-task *data* run-operations)))) ;; force first calculation
 
 (defn add-tool
   "Adds abstract tool to *tools*."

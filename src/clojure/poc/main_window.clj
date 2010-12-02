@@ -13,25 +13,33 @@
 			       :filter-extensions (into-array ["*.jpg;*.png;*.bmp"])))]
     (open-file f)))
 
-(defn toolbar-buttons [toolbar shell]
-  (doall (map (fn [[label f]]
+(defn toolbar-buttons [arg-map]
+  (doall (map (fn [[label f type]]
 		(if label
-		  (let [button (ToolItem. toolbar SWT/PUSH)]
+		  (let [button (ToolItem. (:toolbar arg-map) (if type type SWT/PUSH))]
 		    (doprops button
 			     :text label
 			     :+selection.widget-selected
-			     (try (f shell)
+			     (try (f (assoc arg-map :button button))
 				  (catch IllegalArgumentException e
 				    (f)))))
-		  (ToolItem. toolbar SWT/SEPARATOR)))
-	      [["Otwórz" #(do (open-file-dialog %)
+		  (ToolItem. (:toolbar arg-map) SWT/SEPARATOR)))
+	      [["Otwórz" #(do (open-file-dialog (:shell %))
 			      (reset-tools))]
 	       ["Zapisz"]
 	       []
 	       ["Zastosuj" #(do (send-task *data* apply-changes)
 				(reset-tools))]
 	       ["Cofnij" #(do (send-task *data* cancel-changes)
-			      (reset-tools))]])))
+			      (reset-tools))]
+	       []
+	       ["Pokaż wykresy" #(do (doprops (:plots arg-map)
+					      :layout-data
+					      (str "span 2, grow, height "
+						   (if (-> % :button .getSelection)
+						     "100!" "0!")))
+				     (.layout (:shell arg-map)))
+				   SWT/CHECK]])))
 
 (defn expand-bar [parent]
   (let [expand-bar (ExpandBar. parent SWT/V_SCROLL)]
@@ -48,12 +56,15 @@
   "Create main window."
   []
   (let [shell (Shell. (default-display))
-	layout (MigLayout. "wrap 2" "0[grow,fill,100::]0[fill,340!]0" "0[][grow,fill]0")
+	layout (MigLayout. "wrap 2" "0[grow,fill,100::]0[fill,340!]0" "0[]0[][grow,fill]0")
+	plots (Composite. shell SWT/NONE)
 	canvas (canvas shell)
 	toolbar (ToolBar. shell (reduce bit-or [SWT/HORIZONTAL SWT/WRAP SWT/FLAT]))
-	toolbar-buttons (toolbar-buttons toolbar shell)
+	toolbar-buttons (toolbar-buttons {:shell shell :plots plots :canvas canvas :toolbar toolbar})
 	;;expand-bar-scroll (ScrolledComposite. shell (bit-or SWT/BORDER SWT/V_SCROLL))
 	expand-bar (expand-bar shell)]
+    (doprops plots
+	     :layout-data "span 2, height 0!, grow")
     (doprops canvas
 	     :layout-data "span 1 2, grow"
 	     :background (Color. (default-display) 100 100 100))
