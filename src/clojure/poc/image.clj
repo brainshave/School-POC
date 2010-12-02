@@ -1,5 +1,5 @@
 (ns poc.image
-  (:use (poc workers swt tools)))
+  (:use (poc workers swt utils)))
 
 (import-swt)
 
@@ -69,9 +69,11 @@
   *candies* vectors. Returns data as-is."
   ([] (dorun (map #(remove-watch % :run-operations)
 		  (:watched @*candies*)))
-     (reset! *candies* empty-candies)
-     (reset-tools))
-  ([data] (cancel-changes) data))
+     (reset! *candies* empty-candies))
+  ([[original preview tmp]]
+     (cancel-changes)
+     (array-copy (.data original) (.data preview))
+     [original preview tmp]))
 
   
 (defn apply-changes
@@ -79,4 +81,5 @@
   base image is that one with applied all changes)."
   [[original preview tmp]]
   (cancel-changes)
-  [preview original tmp])
+  (array-copy (.data preview) (.data original))
+  [original preview tmp])

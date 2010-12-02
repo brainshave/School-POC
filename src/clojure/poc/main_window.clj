@@ -3,9 +3,8 @@
   (:use (poc swt image tools
 	     [canvas :only [canvas]]
 	     [workers :only [send-task]])
-	(poc.tools bcg)
-	(little-gui-helper properties)
-	(poc)))
+	(little-gui-helper properties))
+  (:require (poc.tools bcg)))
 
 (import-swt)
 
@@ -25,11 +24,14 @@
 				  (catch IllegalArgumentException e
 				    (f)))))
 		  (ToolItem. toolbar SWT/SEPARATOR)))
-	      [["Otwórz" open-file-dialog]
+	      [["Otwórz" #(do (open-file-dialog %)
+			      (reset-tools))]
 	       ["Zapisz"]
 	       []
-	       ["Zastosuj" #(send-task *data* apply-changes)]
-	       ["Cofnij" #(send-task *data* cancel-changes)]])))
+	       ["Zastosuj" #(do (send-task *data* apply-changes)
+				(reset-tools))]
+	       ["Cofnij" #(do (send-task *data* cancel-changes)
+			      (reset-tools))]])))
 
 (defn expand-bar [parent]
   (let [expand-bar (ExpandBar. parent SWT/V_SCROLL)]

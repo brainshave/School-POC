@@ -1,6 +1,6 @@
 (ns poc.tools
   (:use (little-gui-helper properties)
-	(poc swt utils)))
+	(poc swt utils image)))
 
 (import-swt)
 
@@ -75,7 +75,7 @@
   (reset! values init)
   (add-watch values :first-change
 	     (fn [k a _ _]
-	       ;;(add-operation function a)
+	       (add-operation function a)
 	       (println "First change")
 	       (remove-watch a k)))) ;; add to *candies* only once
 
@@ -83,6 +83,9 @@
   "Adds abstract tool to *tools*."
   [priority tool]
   (swap! *tools* #(assoc %1 priority [tool nil])))
+
+(defn reset-tools []
+  (dorun (map reset-tool (vals @*tools*))))
 
 (defn tool-panels
   "Generates new panels for all *tools*.
@@ -93,9 +96,8 @@
 	   (reduce (fn [tools [prior [tool]]]
 		     (assoc-in tools [prior 1] (tool-panel parent tool)))
 		   tools tools)))
+  (reset-tools)
   (map (fn [[tool tool-panel]]
 	 [(:name tool) (:panel tool-panel)])
        (vals @*tools*)))
 
-(defn reset-tools []
-  (dorun (map reset-tool (vals @*tools*))))
