@@ -1,11 +1,12 @@
 (ns poc.main-window
   "Main window for this application."
-  (:use (poc swt image tools
+  (:use (poc swt image tools plots
 	     [canvas :only [canvas]]
 	     [workers :only [send-task]])
 	(little-gui-helper properties))
   ;; require something from poc.tools means adding it to *tools*
-  (:require (poc.tools bcg cmyk)))
+  (:require (poc.tools bcg cmyk)
+	    (poc.plots histograms)))
 
 (import-swt)
 
@@ -38,7 +39,7 @@
 					      :layout-data
 					      (str "span 2, grow, height "
 						   (if (-> % :button .getSelection)
-						     "100!" "0!")))
+						     (str (+ 6 poc.plots/*height*) "!") "0!")))
 				     (.layout (:shell arg-map)))
 				   SWT/CHECK]])))
 
@@ -57,15 +58,20 @@
   "Create main window."
   []
   (let [shell (Shell. (default-display))
-	layout (MigLayout. "wrap 2" "0[grow,fill,100::]0[fill,340!]0" "0[]0[][grow,fill]0")
+	layout (MigLayout. "wrap 2"
+			   "0[grow,fill,100::]0[fill,340!]0"
+			   "0[]0[][grow,fill]0")
 	plots (Composite. shell SWT/NONE)
+	plots-layout (MigLayout. "" "" (format "3[%d]3" poc.plots/*height*))
+	plot-canvases (plot-canvases plots)
 	canvas (canvas shell)
 	toolbar (ToolBar. shell (reduce bit-or [SWT/HORIZONTAL SWT/WRAP SWT/FLAT]))
 	toolbar-buttons (toolbar-buttons {:shell shell :plots plots :canvas canvas :toolbar toolbar})
 	;;expand-bar-scroll (ScrolledComposite. shell (bit-or SWT/BORDER SWT/V_SCROLL))
 	expand-bar (expand-bar shell)]
     (doprops plots
-	     :layout-data "span 2, height 0!, grow")
+	     :layout-data "span 2, height 0!, grow"
+	     :layout plots-layout)
     (doprops canvas
 	     :layout-data "span 1 2, grow"
 	     :background (Color. (default-display) 100 100 100))

@@ -12,7 +12,7 @@
 	   Composite Label Scale Canvas Display
 	   Button ToolBar ToolItem]
 	  [org.eclipse.swt.custom ScrolledComposite]
-	  [org.eclipse.swt.graphics Color GC ImageData Image]
+	  [org.eclipse.swt.graphics Color GC ImageData Image PaletteData]
 	  [org.eclipse.swt.events SelectionListener PaintListener MouseMoveListener]
 	  [net.miginfocom.swt MigLayout]))
 
