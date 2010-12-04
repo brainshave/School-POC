@@ -4,7 +4,8 @@
 	     [canvas :only [canvas]]
 	     [workers :only [send-task]])
 	(little-gui-helper properties))
-  (:require (poc.tools bcg)))
+  ;; require something from poc.tools means adding it to *tools*
+  (:require (poc.tools bcg cmyk)))
 
 (import-swt)
 
@@ -24,9 +25,9 @@
 				  (catch IllegalArgumentException e
 				    (f)))))
 		  (ToolItem. (:toolbar arg-map) SWT/SEPARATOR)))
-	      [["Otwórz" #(do (open-file-dialog (:shell %))
+	      [["Wczytaj" #(do (open-file-dialog (:shell %))
 			      (reset-tools))]
-	       ["Zapisz"]
+	       ["Złomuj"]
 	       []
 	       ["Zastosuj" #(do (send-task *data* apply-changes)
 				(reset-tools))]

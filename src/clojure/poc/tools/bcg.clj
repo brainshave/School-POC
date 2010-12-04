@@ -24,7 +24,7 @@
   (let [m (to-byte-array (calc-maps brightness contrast gamma))]
     (ByteWorker/applyMaps data-in data-out m m m)))
 
-(add-tool 1 (tool "Jasność, kontrast, gamma"
+(add-tool 10 (tool "Jasność, kontrast, gamma"
 		  bcg
 		  [bkey 0 -255 255]
 		  [ckey 0 -255 255]
