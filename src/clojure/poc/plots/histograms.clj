@@ -22,6 +22,7 @@
 
 (doseq [[priority color] (partition 2 [21 :rgb 22 :r 23 :g 24 :b])]
   (add-plot priority (histogram-with (name color) color)))
+(add-plot 25 (histogram-with "rgb" :r :g :b :rgb))
 
 
 
