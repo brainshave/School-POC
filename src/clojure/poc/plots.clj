@@ -1,5 +1,5 @@
 (ns poc.plots
-  (:use (poc swt)
+  (:use (poc swt image)
 	(little-gui-helper properties)))
 
 (import-swt)
@@ -52,9 +52,24 @@ is [plot plot-data canvas]."}
 		 (reset! image (Image. (default-display) data))
 		 (.drawImage (.gc event) @image 0 0)))))
 
-(defn plot-canvases [parent]
+(defn plot-canvases
+  "Creates canvases for plots."
+  [parent]
   (reset! *plots*
 	  (reduce (fn [plots [priority [plot data]]]
 		    (assoc-in plots [priority 2] (plot-canvas parent plot data)))
 		  @*plots* @*plots*)))
+
+(defn redraw-plots []
+  (dorun (pmap (fn [[{:keys [key f]} data canvas]]
+		 (f data (-> @*backing-data* key second))
+		 (async-exec #(.redraw canvas)))
+	       (vals @*plots*))))
+
+(add-watch *data* :redraw-plots
+	   (fn [_ _ _ [_ data _]]
+	     (future
+	      (recalc-backing-data data)
+	      (redraw-plots))))
+		 
 
