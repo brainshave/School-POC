@@ -117,7 +117,7 @@ public class HSL extends ColorModel {
 		}
 		rgbbuff[i] = Tc;
 	    }
-		    
+	}	    
 	    
 	return rgbbuff;
     }
