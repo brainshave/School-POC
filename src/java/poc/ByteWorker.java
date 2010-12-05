@@ -1,7 +1,7 @@
 package poc;
 
 import java.util.Arrays;
-import org.eclipse.swt.graphics.*;
+import org.eclipse.swt.graphics.ImageData;
 
 public class ByteWorker {
 

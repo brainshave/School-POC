@@ -5,7 +5,7 @@
 	     [workers :only [send-task]])
 	(little-gui-helper properties))
   ;; require something from poc.tools means adding it to *tools*
-  (:require (poc.tools bcg cmyk)
+  (:require (poc.tools bcg cmyk hsl)
 	    (poc.plots histograms)))
 
 (import-swt)
@@ -66,11 +66,12 @@
 	plot-canvases (plot-canvases plots)
 	canvas (canvas shell)
 	toolbar (ToolBar. shell (reduce bit-or [SWT/HORIZONTAL SWT/WRAP SWT/FLAT]))
-	toolbar-buttons (toolbar-buttons {:shell shell :plots plots :canvas canvas :toolbar toolbar})
+	toolbar-buttons (toolbar-buttons {:shell shell :plots plots
+					  :canvas canvas :toolbar toolbar})
 	;;expand-bar-scroll (ScrolledComposite. shell (bit-or SWT/BORDER SWT/V_SCROLL))
 	expand-bar (expand-bar shell)]
     (doprops plots
-	     :layout-data "span 2, height 0!, grow"
+	     :layout-data "span 2, height 0!, grow, width 100::"
 	     :layout plots-layout)
     (doprops canvas
 	     :layout-data "span 1 2, grow"

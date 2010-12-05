@@ -38,7 +38,7 @@ public class HSL extends ColorModel {
 		buff[1] = 0;
 	    } else {
 		// S = L < 0.5 ? dm / 2L : dm / (2 - 2L)
-		buff[1] = (dm >> 1) / ( L < 128 ? L : 255 - L);
+		buff[1] = (dm << 7) / ( L < 127 ? L : 255 - L);
 	    }
 
 	    int H;
@@ -91,9 +91,9 @@ public class HSL extends ColorModel {
 	} else {
 	    // Q = { L * (1.0 + S), L < 0.5
 	    //     { L + S - (L * S), L >= 0.5
-	    final int Q = L < 128 ? ( L * (255 + S)) : (L + S - (L * S));
+	    final int Q = L < 127 ? ((L * (255 + S)) >> 8) : (L + S - ((L * S) >> 8));
 	    // P = 2.0 * L - Q
-	    final int P = L << 1 - Q;
+	    final int P = (L << 1) - Q;
 
 	    // leaving H in 0..360 range, means that all numbers in Tx
 	    // should be *360
@@ -101,17 +101,17 @@ public class HSL extends ColorModel {
 	    // final int Tg = H;
 	    // final int Tb = correctHue(H - 120);
 	    int Tc;
-	    int rotation = -120;
+	    int rotation = 120;
 	    for(int i = 0; i < 3; ++i) {
 		Tc = correctHue(H + rotation);
-		rotation += 120;
+		rotation -= 120;
 
 		if (Tc < 60) { // Tc < 1/6
-		    Tc = P + (Q - P) * 6 * Tc;
+		    Tc = P + (((Q - P) * 6 * Tc) / 360);
 		} else if (Tc < 180) { // Tc < 1/2
 		    Tc = Q;
-		} else if (Tc < 270) { // Tc < 2/3
-		    Tc = P + (Q - P) * 6 * (270 - Tc);
+		} else if (Tc < 240) { // Tc < 2/3
+		    Tc = P + (((Q - P) * 6 * (240 - Tc)) / 360);
 		} else {
 		    Tc = P;
 		}
@@ -126,5 +126,26 @@ public class HSL extends ColorModel {
     {
 	super(3);
     }
-	
+
+
+    public void test(int r, int g, int b)
+    {
+	int[] hsl = fromRGB(r,g,b);
+	int[] rgb = toRGB(hsl);
+	System.out.format("R: %d G: %d B: %d\nH: %d S: %d L: %d\nR: %d G: %d B: %d\n----\n", r, g, b, hsl[0], hsl[1], hsl[2], rgb[0], rgb[1], rgb[2]);
+    }
+    
+    public static void main(String [] a) {
+	HSL model = new HSL();
+	model.test(0, 0, 0);
+	model.test(255, 255, 255);
+	model.test(255, 0, 0);
+	model.test(0, 255, 0);
+	model.test(0, 0, 255);
+	model.test(255, 128, 0);
+	model.test(0, 255, 128);
+	model.test(128, 0, 255);
+	model.test(255, 0, 255);
+	model.test(200, 150, 100);
+    }
 }
