@@ -3,7 +3,7 @@ package poc;
 import org.eclipse.swt.graphics.ImageData;
 
 public class ColorModelAdjustment {
-    public static final void adjust
+    public final void adjust
 	(final ImageData in, final ImageData out,
 	 final ColorModel model, final int[] adjustments)
     {
