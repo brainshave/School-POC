@@ -41,25 +41,84 @@ public class HSL extends ColorModel {
 		buff[1] = (dm >> 1) / ( L < 128 ? L : 255 - L);
 	    }
 
+	    int H;
 	    // Hue
 	    if (max == r) {
-		buff[0] = ((g - b) * 60) / dm;
-		if (g < b) {
-		    buff[0] += 360;
-		}
+		H = ((g - b) * 60) / dm;
+		// does the same thing as correctHue, so commented.
+		//if (g < b) {
+		//H += 360;
+		//}
 	    } else if (max == g) {
-		buff[0] = (((b - r) * 60) / dm) + 120;
+		H = (((b - r) * 60) / dm) + 120;
 	    } else { // max == b
-		buff[0] = (((r - g) * 60) / dm) + 240;
+		H = (((r - g) * 60) / dm) + 240;
 	    }
+
+	    buff[0] = correctHue(H);
 	}
 	
 	return buff;
     }
 
+    public static final int correctHue(int h) {
+	h %= 360;
+	if (h < 0) {
+	    return h + 360;
+	} else {
+	    return h;
+	}
+    }
+
+    public static final int correct255(int i) {
+	if (i < 0) return 0;
+	if (i > 255) return 255;
+	return i;
+    }
+
     public final int[] toRGB
 	(final int[] color)
     {
+	final int H = correctHue(color[0]);
+	final int S = correct255(color[1]);
+	final int L = correct255(color[2]);
+	
+	// S == 0 => R=G=B=L
+	if (S == 0) {
+	    rgbbuff[0] = L;
+	    rgbbuff[1] = L;
+	    rgbbuff[2] = L;
+	} else {
+	    // Q = { L * (1.0 + S), L < 0.5
+	    //     { L + S - (L * S), L >= 0.5
+	    final int Q = L < 128 ? ( L * (255 + S)) : (L + S - (L * S));
+	    // P = 2.0 * L - Q
+	    final int P = L << 1 - Q;
+
+	    // leaving H in 0..360 range, means that all numbers in Tx
+	    // should be *360
+	    // final int Tr = correctHue(H + 120);
+	    // final int Tg = H;
+	    // final int Tb = correctHue(H - 120);
+	    int Tc;
+	    int rotation = -120;
+	    for(int i = 0; i < 3; ++i) {
+		Tc = correctHue(H + rotation);
+		rotation += 120;
+
+		if (Tc < 60) { // Tc < 1/6
+		    Tc = P + (Q - P) * 6 * Tc;
+		} else if (Tc < 180) { // Tc < 1/2
+		    Tc = Q;
+		} else if (Tc < 270) { // Tc < 2/3
+		    Tc = P + (Q - P) * 6 * (270 - Tc);
+		} else {
+		    Tc = P;
+		}
+		rgbbuff[i] = Tc;
+	    }
+		    
+	    
 	return rgbbuff;
     }
 
