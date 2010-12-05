@@ -1,9 +1,9 @@
 (ns poc.tools.hsl
-  (:use (poc tools))
+  (:use (poc tools utils))
   (:import (poc HSL)))
 
 (defn hsl [{h "H" s "S" l "L"} data-in data-out]
-  )
+  (array-copy (.data data-in) (.data data-out)))
 
 (add-tool 32 (tool "HSL"
 		   hsl
