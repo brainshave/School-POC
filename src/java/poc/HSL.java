@@ -126,26 +126,9 @@ public class HSL extends ColorModel {
     {
 	super(3);
     }
-
-
-    public void test(int r, int g, int b)
-    {
-	int[] hsl = fromRGB(r,g,b);
-	int[] rgb = toRGB(hsl);
-	System.out.format("R: %d G: %d B: %d\nH: %d S: %d L: %d\nR: %d G: %d B: %d\n----\n", r, g, b, hsl[0], hsl[1], hsl[2], rgb[0], rgb[1], rgb[2]);
-    }
     
     public static void main(String [] a) {
 	HSL model = new HSL();
-	model.test(0, 0, 0);
-	model.test(255, 255, 255);
-	model.test(255, 0, 0);
-	model.test(0, 255, 0);
-	model.test(0, 0, 255);
-	model.test(255, 128, 0);
-	model.test(0, 255, 128);
-	model.test(128, 0, 255);
-	model.test(255, 0, 255);
-	model.test(200, 150, 100);
+	tests(model);
     }
 }

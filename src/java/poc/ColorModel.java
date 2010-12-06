@@ -44,4 +44,30 @@ public abstract class ColorModel {
 	this.buff = new int[size];
 	this.rgbbuff = new int[3];
     }
+
+    public static void test
+	(ColorModel model, final int r, final int g, final int b)
+    {
+	int[] other = model.fromRGB(r,g,b);
+	int[] rgb = model.toRGB(other);
+	System.out.format("R: %d G: %d B: %d\nR: %d G: %d B: %d\n", r, g, b, rgb[0], rgb[1], rgb[2]);
+	for (int i : other) {
+	    System.out.print(i + " ");
+	}
+	System.out.print("\n------\n");
+    }
+
+    public final static void tests(ColorModel model)
+    {
+	test(model, 0, 0, 0);
+	test(model, 255, 255, 255);
+	test(model, 255, 0, 0);
+	test(model, 0, 255, 0);
+	test(model, 0, 0, 255);
+	test(model, 255, 128, 0);
+	test(model, 0, 255, 128);
+	test(model, 128, 0, 255);
+	test(model, 255, 0, 255);
+	test(model, 200, 150, 100);
+    }
 }

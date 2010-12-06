@@ -5,7 +5,7 @@
 	     [workers :only [send-task]])
 	(little-gui-helper properties))
   ;; require something from poc.tools means adding it to *tools*
-  (:require (poc.tools bcg cmyk hsl)
+  (:require (poc.tools bcg cmyk hsl lab)
 	    (poc.plots histograms)))
 
 (import-swt)
