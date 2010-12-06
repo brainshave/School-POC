@@ -4,6 +4,7 @@ public abstract class XYZ extends ColorModel {
     protected double x, y, z;
     protected static final double GAMMA = 2.2;
     protected static final double GAMMA_REV = 1.0 / GAMMA;
+    protected static final double ONE_THIRD = 1.0 / 3.0;
     protected static final double K = 903.3;
     protected static final double E = 0.008856;
     protected static final double KE = K*E;

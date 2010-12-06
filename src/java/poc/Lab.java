@@ -1,8 +1,6 @@
 package poc;
 
 public class Lab extends XYZ {
-    public static final double ONE_THIRD = 1.0 / 3.0;
-    
     public static final double f
 	(final double xr)
     {
