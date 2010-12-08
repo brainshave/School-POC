@@ -24,8 +24,6 @@
   [tool]
   (remove-all-watchers (parameters tool))
   (reset tool)
-  ;;(dorun (map reset-slider slider-specs sliders))
-  ;;(reset! values init)
   (add-watch (parameters tool) :first-change
 	     (fn [k a _ _]
 	       (remove-watch a k) ;; add operation only once
@@ -43,15 +41,6 @@
 	(doall (map (fn [tool]
 		      [(:name tool) (create-panel tool parent)])
 		    (vals @*tools*)))]
-    
-  ;; (swap! *tools*
-  ;; 	 (fn [tools]
-  ;; 	   (reduce (fn [tools [prior tool]]
-  ;; 		     (assoctools [prior 1] (create-panel tool parent)))
-  ;; 		   tools tools)))
     (reset-tools)
     names-panels))
-  ;; (map (fn [[tool tool-panel]]
-  ;; 	 [(:name tool) (:panel tool-panel)])
-  ;;      (vals @*tools*)))
 

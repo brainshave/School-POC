@@ -10,7 +10,7 @@
 	   Shell Menu MenuItem MessageBox
 	   FileDialog ExpandBar ExpandItem
 	   Composite Label Scale Canvas Display
-	   Button ToolBar ToolItem]
+	   Button ToolBar ToolItem Text]
 	  [org.eclipse.swt.custom ScrolledComposite]
 	  [org.eclipse.swt.graphics Color GC ImageData Image PaletteData]
 	  [org.eclipse.swt.events SelectionListener PaintListener MouseMoveListener]
