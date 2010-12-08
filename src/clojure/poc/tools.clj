@@ -1,88 +1,36 @@
 (ns poc.tools
-  (:use (little-gui-helper properties)
-	(poc swt utils image workers)))
+  (:use (poc utils image workers)))
 
-(import-swt)
+;;(import-swt)
 
 (defonce ^{:doc "Tools sorted by priority"}
   *tools* (atom (sorted-map)))
 
-(defn normalize-slider
-  "Normalizes slider, so min is 0 (in SWT sliders can't have negative values).
-  Eventually leaves calculation of value in map for user if f is
-  provided. If f is provided does nothing."
-  [[name value min max f]]
-  (if-not f
-    [name (- value min) 0 (- max min) #(+ % min)]
-    [name value min max f]))
+(defprotocol ITool
+  "An abstract tool."
+  (reset [tool] "Reset tool to initial state. ")
+  (create-panel [tool parent] "Generate panel for this tool.")
+  (parameters [tool] "Return atom that holds value of tool parameters.")
+  (function [tool] "Returns function that transforms image."))
 
-(defn tool
-  "Define a tool. f is a function that applies tranformation on
-  ImageData. Takes three arguments
-
-  slider-spec: [name, value, min, max, f?] (Provide f when conversion from
-  slider value to value in map is non-linear)"
-  [name f & sliders]
-  (let [normalized-sliders (map normalize-slider sliders)
-	initial-values (reduce (fn [map [name value _ _ f]]
-				 (assoc map name (f value)))
-			       {} normalized-sliders)]
-    {:name name
-     :function f
-     :init initial-values
-     :values (atom initial-values)
-     :slider-specs normalized-sliders}))
-
-(defn slider-row
-  "Generates row for slider with label and display of current value."
-  [parent atom [name value min max f]]
-  (let [label (Label. parent SWT/HORIZONTAL)
-	display (Label. parent SWT/HORIZONTAL)
-	slider (Scale. parent SWT/HORIZONTAL)]
-    (doprops label :text name)
-    (doprops display :text (str (f value)))
-    (doprops slider
-	     :minimum min
-	     :maximum max
-	     :selection value
-	     :+selection.widget-selected
-	     (let [v (f (.getSelection slider))]
-	       (doprops display :text (str v))
-	       (swap! atom #(assoc %1 name %2) v)))
-    [label display slider]))
-  
-(defn tool-panel
-  [parent {:keys [name function values slider-specs]}]
-  (let [panel (Composite. parent SWT/NONE)
-	layout (MigLayout. "wrap 3" "[right][fill,30!][fill,grow]")
-	sliders (doall (map #(slider-row panel values %)
-			    slider-specs))]
-    (doprops panel :layout layout)
-    {:panel panel :sliders sliders}))
-
-(defn reset-slider
-  "Takes slider-spec, slider-row and resets the latter."
-  [[_ value _ _ f] [_ display slider]]
-  (async-exec #(do (doprops slider :selection value)
-		   (doprops display :text (str (f value))))))
-
-(defn reset-tool
-  "Takes tool structure and tool-panel structure and resets its to defaults"
-  [[{:keys [slider-specs values function init]}
-    {:keys [sliders]}]]
-  (remove-all-watchers values)
-  (dorun (map reset-slider slider-specs sliders))
-  (reset! values init)
-  (add-watch values :first-change
-	     (fn [k a _ _]
-	       (remove-watch a k) ;; add operation only once
-	       (add-operation function a) ;; a will be watched
-	       (send-task *data* run-operations)))) ;; force first calculation
 
 (defn add-tool
   "Adds abstract tool to *tools*."
   [priority tool]
-  (swap! *tools* #(assoc %1 priority [tool nil])))
+  (swap! *tools* #(assoc %1 priority tool)))
+
+(defn reset-tool
+  "Takes tool structure and tool-panel structure and resets its to defaults"
+  [tool]
+  (remove-all-watchers (parameters tool))
+  (reset tool)
+  ;;(dorun (map reset-slider slider-specs sliders))
+  ;;(reset! values init)
+  (add-watch (parameters tool) :first-change
+	     (fn [k a _ _]
+	       (remove-watch a k) ;; add operation only once
+	       (add-operation (function tool) a) ;; a will be watched
+	       (send-task *data* run-operations)))) ;; force first calculation
 
 (defn reset-tools []
   (dorun (map reset-tool (vals @*tools*))))
@@ -91,13 +39,19 @@
   "Generates new panels for all *tools*.
   Returns sequence of pairs [tool-name panel]"
   [parent]
-  (swap! *tools*
-	 (fn [tools]
-	   (reduce (fn [tools [prior [tool]]]
-		     (assoc-in tools [prior 1] (tool-panel parent tool)))
-		   tools tools)))
-  (reset-tools)
-  (map (fn [[tool tool-panel]]
-	 [(:name tool) (:panel tool-panel)])
-       (vals @*tools*)))
+  (let [names-panels
+	(doall (map (fn [tool]
+		      [(:name tool) (create-panel tool parent)])
+		    (vals @*tools*)))]
+    
+  ;; (swap! *tools*
+  ;; 	 (fn [tools]
+  ;; 	   (reduce (fn [tools [prior tool]]
+  ;; 		     (assoctools [prior 1] (create-panel tool parent)))
+  ;; 		   tools tools)))
+    (reset-tools)
+    names-panels))
+  ;; (map (fn [[tool tool-panel]]
+  ;; 	 [(:name tool) (:panel tool-panel)])
+  ;;      (vals @*tools*)))
 

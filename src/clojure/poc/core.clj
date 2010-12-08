@@ -11,3 +11,5 @@
   (start-all-workers)
   (swt-loop (main-window))
   (stop-all-workers))
+
+(defrecord Lalala [a b c d])

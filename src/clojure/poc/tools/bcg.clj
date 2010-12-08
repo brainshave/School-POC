@@ -1,5 +1,5 @@
 (ns poc.tools.bcg
-  (:use (poc tools utils))
+  (:use (poc tools simpletool utils))
   (:import (poc ByteWorker)))
 
 (defonce bkey "Jasność")
@@ -24,10 +24,10 @@
   (let [m (to-byte-array (calc-maps brightness contrast gamma))]
     (ByteWorker/applyMaps data-in data-out m m m)))
 
-(add-tool 10 (tool "Jasność, kontrast, gamma"
-		  bcg
-		  [bkey 0 -255 255]
-		  [ckey 0 -255 255]
-		  [gkey 100 1 190  #(float (if (<= % 100)
-						(/ % 100)
-						(+ (/ (- % 100) 10) 1)))]))
+(add-tool 10 (simple-tool "Jasność, kontrast, gamma"
+			  bcg
+			  [bkey 0 -255 255]
+			  [ckey 0 -255 255]
+			  [gkey 100 1 190  #(float (if (<= % 100)
+						     (/ % 100)
+						     (+ (/ (- % 100) 10) 1)))]))

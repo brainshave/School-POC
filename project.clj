@@ -8,6 +8,7 @@
 		 [com.miglayout/miglayout "3.7.3.1" :classifier "swt"]]
   :dev-dependencies [[swank-clojure "1.2.1"]]
   ;;:aot [#"poc\..*"]
+;;  :aot [poc.simple-tool]
   :main poc.core
   :source-path "src/clojure"
   :java-source-path "src/java"
