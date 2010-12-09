@@ -36,21 +36,50 @@
   ;; get matrix earlier
   (if old-grid (dispose old-grid))
   (let [{:keys [width height]} (if old-grid old-grid {:width 0 :height 0})
-	new-width (+ width +cols)
-	new-height (+ height +cols)
+	new-width (max 1 (+ width +cols))
+	new-height (max 1 (+ height +rows))
 	inputs (doall (for [col (range new-width)]
 			(doall (for [row (range new-height)]
 				 (doprops (Text. panel SWT/SINGLE)
 					  :text "0"
-					  :layout-data (format "cell %d %d" col row))))))]
-    (.layout panel)
+					  :layout-data (format "width 25::,cell %d %d" col row))))))]
+    (.pack panel)
     (Grid. inputs new-width new-height)))
 
 (defn grid-control-button [parent grid-atom button +cols +rows]
   (doprops button
-	   :text (str (if (not= 0 +cols) +cols +rows))
+	   :text (let [num (if (not= 0 +cols) +cols +rows)]
+		   (if (< 0 num) (str "+" num) (str num)))
 	   :+selection.widget-selected
 	   (reset! grid-atom (create-grid parent @grid-atom +cols +rows))))
+
+(defn table [parent width height]
+  (let [table (Table. parent (reduce bit-or [SWT/SINGLE]))
+	table-editor (TableEditor. table)]
+    (doprops table :lines-visible true
+	     :+selection.widget-selected
+	     (do (if-let [old (.getEditor table-editor)]
+		   (.dispose old))
+		 (if-let [item (.item event)]
+		   (let [new-editor (Text. table SWT/NONE)]
+		     (doprops new-editor
+			      :text (.getText item 0)
+			      :+modify.modify-text
+			      (.setText item 0 (.getText new-editor)))
+		     (doto new-editor
+		       (.selectAll)
+		       (.setFocus))))))
+    (dotimes [i 10]
+      (doprops (TableColumn. table SWT/NONE)
+	       :text (str i)))
+    (dotimes [r 128]
+      (let [row (TableItem. table SWT/NONE)]
+	(dotimes [i 10]
+	  (doprops row
+		   :text ^unroll (i (str (* i r)))))))
+    (dotimes [i 10]
+      (.. table (getColumn i) pack))
+    table))
 
 (defrecord MatrixTool
   [name vs panel grid]
@@ -60,19 +89,26 @@
   (function [tool] convolution)
   (create-panel [tool parent]
 		(let [new-panel (Composite. parent SWT/NONE)
-		      layout (MigLayout. "wrap 3" "[fill,grow][fill,grow][fill]" "[fill,grow][fill,grow][fill]")
-		      grid-container (Composite. new-panel SWT/NONE)
-		      grid-layout (MigLayout.)
+		      layout (MigLayout. "wrap 3" "[fill,grow][fill,grow][fill]"
+					 "[fill,grow][fill,grow][fill]")
+		      grid-scroll (ScrolledComposite. new-panel (bit-or SWT/V_SCROLL SWT/H_SCROLL))
+		      grid-container (Composite. grid-scroll SWT/NONE)
+		      grid-layout (MigLayout. "" "[fill,grow]")
 		      new-grid (create-grid grid-container nil 3 3)
+		      ;;new-grid (table new-panel 3 3)
 		      add-col (Button. new-panel SWT/PUSH)
 		      del-col (Button. new-panel SWT/PUSH)
-		      del-row (Button. new-panel SWT/PUSH)
 		      add-row (Button. new-panel SWT/PUSH)
+		      del-row (Button. new-panel SWT/PUSH)
 		      go (Button. new-panel SWT/PUSH)]
-		  (doprops grid-container
+		  (doprops grid-scroll
 			   ;;:background (Color. (default-display) 0 0 0)
-			   :layout-data "span 2 2"
-			   :layout grid-layout)
+			   :layout-data "span 2 2,width 30::, height 200!")
+		  (doprops grid-container :layout grid-layout)
+		  (.pack grid-container)
+			   ;;:size ^unroll (500 500))
+		  (doprops grid-scroll :content grid-container)
+		  ;(.pack grid-container)
 		  (doseq [[button +cols +rows] [[add-col 2 0]
 						[del-col -2 0]
 						[add-row 0 2]
@@ -84,10 +120,6 @@
 			     (println "ASDFQWER")
 			     (pprint val)
 			     (reset! vs val)))
-		  ;; (doprops add-col :text "+2")
-		  ;; (doprops del-col :text "-2")
-		  ;; (doprops add-row :text "+2")
-		  ;; (doprops del-row :text "-2")
 		  (doprops new-panel :layout layout)
 		  (reset! panel new-panel)
 		  (reset! grid new-grid)

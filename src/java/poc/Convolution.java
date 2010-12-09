@@ -27,6 +27,9 @@ public class Convolution {
 		sum_mask += x;
 	    }
 	}
+	if (sum_mask == 0) {
+	    sum_mask = 1;
+	}
 	
 	final int delta_col = mask[0].length / 2;
 	final int delta_row = mask.length / 2;

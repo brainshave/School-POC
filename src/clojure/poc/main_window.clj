@@ -59,7 +59,7 @@
   []
   (let [shell (Shell. (default-display))
 	layout (MigLayout. "wrap 2"
-			   "0[grow,fill,100::]0[fill,340!]0"
+			   "0[grow,fill,100::]0[fill,340::]0"
 			   "0[]0[][grow,fill]0")
 	plots (Composite. shell SWT/NONE)
 	plots-layout (MigLayout. "" "" (format "3[%d]3" poc.plots/*height*))
