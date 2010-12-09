@@ -21,8 +21,6 @@ public class Convolution {
 	final int row_used_length = width * 3;
 	final int n = in.length;
 
-	//int start = 0;
-	//int end = row_used_length;
 	int sum_mask = 0;
 	for(int[] column: mask) {
 	    for(int x: column) {
@@ -42,48 +40,27 @@ public class Convolution {
 			int y = row - delta_col;
 			for (int f: mask_col) {
 			    int pixel = 0;
-			    if (x >= 0 && x < width && y >= 0 && y < height) {
-				pixel = in[y * row_length + 3 * x + color];
-				if (pixel < 0) pixel += 256;
-			    }
+			    int localx = x;
+			    if (localx < 0) localx = -x;
+			    if (localx >= width) localx = width *2 - x -2;
+			    
+			    int localy = y;
+			    if (localy < 0) localy = -y;
+			    if (localy >= height) localy = height *2 - y -2;
+			    
+			    pixel = in[localy * row_length + 3 * localx + color];
+			    
+			    if (pixel < 0) pixel += 256;
+			    
 
 			    s += f * pixel;
 			    ++y;
 			}
 			++x;
 		    }
-		    out[row * row_length + 3 * x + color] = ByteWorker.toByte(s / sum_mask);
+		    out[row * row_length + 3 * col + color] = ByteWorker.toByte(s / sum_mask);
 		}
 	    }
 	}
     }
 }
-		
-// final int last_i = mask.length/2;
-// final int last_j = mask[0].length/2;
-// final int i_start = -last_i;
-// final int j_start = -last_j;
-
-// for (int row = 0; row < height; ++row) {
-//     for (int col = 0; col < width_used_length; ++col) {
-// 	int s = 0;
-// 	for (int i = i_start; i < last_i; ++i) {
-// 	    int x = col + i * 3;
-// 	    if (x < 0) x = -x;
-// 	    else if (x >= width) x = 2 * width - i - 2;
-
-// 	    int[] mask_col = mask[i];
-// 	    for (int j = j_start; j < last_j; ++j) {
-// 		int y = row + j;
-// 		if (y < 0) y = -y;
-// 		else if (y >= height) y = 2 * height - i - 2;
-			
-// 		int val = in[y * row_length + x];
-// 		if (val < 0) val += 256;
-// 		s += mask_col[j] * val;
-// 	    }
-// 	}
-// 	out[row * row_length + 3 * col] = ByteWorker.toByte(s / sum_mask);
-//     }
-// }
-	  
