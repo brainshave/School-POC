@@ -1,6 +1,5 @@
 (ns poc.tools.gauss
-  (:use (poc tools utils simpletool)
-	(little-gui-helper properties))
+  (:use (poc tools simpletool))
   (:import (poc Convolution)))
 
 (def xkey "Szerokość")
