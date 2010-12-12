@@ -74,7 +74,11 @@
 		      del-col (Button. new-panel SWT/PUSH)
 		      add-row (Button. new-panel SWT/PUSH)
 		      del-row (Button. new-panel SWT/PUSH)
-		      go (Button. new-panel SWT/PUSH)]
+		      go (Button. new-panel SWT/PUSH)
+		      normal-radio (Button. new-panel SWT/RADIO)
+		      median-radio (Button. new-panel SWT/RADIO)
+		      min-radio (Button. new-panel SWT/RADIO)
+		      max-radio (Button. new-panel SWT/RADIO)]
 		  (doprops grid-scroll
 			   :layout-data "span 2 2, height 200!"
 			   :content grid-container)
@@ -86,8 +90,16 @@
 						[del-row 0 -2]]]
 		    (grid-control-button grid-container grid button +cols +rows))
 		  (doprops go
+			   :layout-data "span 1 3"
+			   :text "!"
 			   :+selection.widget-selected
 			   (reset! vs (matrix @grid)))
+		  (doseq [[radio text] [[normal-radio "Splot"]
+					[median-radio "Mediana"]
+					[min-radio "Minimum"]
+					[max-radio "Maximium"]]]
+		    (doprops radio :text text))
+		  (doprops normal-radio :selection true)
 		  (doprops new-panel :layout layout)
 		  (reset! panel new-panel)
 		  (reset! grid new-grid)
