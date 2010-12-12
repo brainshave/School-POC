@@ -9,7 +9,7 @@
   applying, changes are unrevertable), second is buffer meant to be
   displayed on screen (has applied preview transformations), third is
   a temporary buffer used when applying transformations."}
-     *data* (worker [nil nil nil]))
+     *data* (worker [nil nil nil nil]))
 
 (def empty-candies {:fns [] :watched []})
 
@@ -22,8 +22,9 @@
   (let [data (ImageData. f)]
     (if (.. data palette isDirect)
       (let [clone1 (future (.clone data))
-	    clone2 (future (.clone data))] 
-	(send-task *data* (fn [_] [data @clone1 @clone2])))
+	    clone2 (future (.clone data))
+	    clone3 (future (.clone data))] 
+	(send-task *data* (fn [_] [data @clone1 @clone2 @clone3])))
       (message "Błąd: Indeskowany obrazek"
 	       "Program nie działa na indeksowanych obrazkach."))))
 
@@ -39,16 +40,19 @@
   of [preview tmp] and [tmp preview] as [data-in data-out].
 
   Returned value is [original last-used-as-data-out the-other buffer]."
-  [[original preview tmp]]
+  [[original preview tmp spare]]
+  ;;(array-copy (.data original) (.data tmp))
   (let [{:keys [fns watched]} @*candies*
 	circle (cycle (list preview tmp))
 	inputs (cons original circle)
 	outputs circle]
-    (dorun (map #(%1 @%2 %3 %4)
+    (dorun (map #(try (%1 @%2 %3 %4)
+		      (catch IllegalArgumentException e
+			(%1 @%2 %3 %4 spare)))
 		fns watched inputs outputs))
     (if (-> fns count even?)
-      [original tmp preview]
-      [original preview tmp])))
+      [original tmp preview spare]
+      [original preview tmp spare])))
 	 
 
 (defn add-operation
@@ -70,16 +74,16 @@
   ([] (dorun (map #(remove-watch % :run-operations)
 		  (:watched @*candies*)))
      (reset! *candies* empty-candies))
-  ([[original preview tmp]]
+  ([[original preview tmp spare]]
      (cancel-changes)
      (array-copy (.data original) (.data preview))
-     [original preview tmp]))
+     [original preview tmp spare]))
 
   
 (defn apply-changes
   "Does what cancel-changes but swaps preview with base images (so new
   base image is that one with applied all changes)."
-  [[original preview tmp]]
+  [[original preview tmp spare]]
   (cancel-changes)
   (array-copy (.data preview) (.data original))
-  [original preview tmp])
+  [original preview tmp spare])
