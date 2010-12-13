@@ -6,8 +6,19 @@
 
 (import-swt)
 
-(defn convolution [matrix data-in data-out]
-  (Convolution/filter data-in data-out matrix))
+(def convkey "Splot")
+(def minkey "Minimum")
+(def maxkey "Maximum")
+(def medkey "Mediana")
+
+(defn convolution [{:keys [matrix algorithm]} data-in data-out]
+  (try 
+    (condp = algorithm
+	convkey (Convolution/filter data-in data-out matrix)
+	minkey (Convolution/minimum data-in data-out matrix)
+	maxkey (Convolution/maximum data-in data-out matrix)
+	medkey (Convolution/median data-in data-out matrix))
+    (catch Exception e (.printStackTrace e))))
 
 (defprotocol IGrid
   (matrix [grid])
@@ -55,10 +66,16 @@
 	   :+selection.widget-selected
 	   (reset! grid-atom (create-grid parent @grid-atom +cols +rows))))
 
+(defn mode-radio-button [button text vs-atom]
+  (doprops button
+	   :text text
+	   :+selection.widget-selected
+	   (swap! vs-atom #(assoc % :algorithm text))))
+
 (defrecord MatrixTool
   [name vs panel grid]
   ITool
-  (reset [tool] (reset! vs nil))
+  (reset [tool])
   (parameters [tool] vs)
   (function [tool] convolution)
   (create-panel [tool parent]
@@ -93,16 +110,16 @@
 			   :layout-data "span 1 3"
 			   :text "!"
 			   :+selection.widget-selected
-			   (reset! vs (matrix @grid)))
-		  (doseq [[radio text] [[normal-radio "Splot"]
-					[median-radio "Mediana"]
-					[min-radio "Minimum"]
-					[max-radio "Maximium"]]]
-		    (doprops radio :text text))
+			   (swap! vs #(assoc % :matrix (matrix @grid))))
+		  (doseq [[radio text] [[normal-radio convkey]
+					[median-radio medkey]
+					[min-radio minkey]
+					[max-radio maxkey]]]
+		    (mode-radio-button radio text vs))
 		  (doprops normal-radio :selection true)
 		  (doprops new-panel :layout layout)
 		  (reset! panel new-panel)
 		  (reset! grid new-grid)
 		  new-panel)))
 
-(add-tool 51 (MatrixTool. "Splot" (atom nil) (atom nil) (atom nil)))
+(add-tool 51 (MatrixTool. "Splot" (atom {}) (atom nil) (atom nil)))

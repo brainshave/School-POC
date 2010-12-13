@@ -13,5 +13,5 @@
 			  unsharp-mask
 			  [xkey 0 0 40 #(inc (* 2 %))]
 			  [ykey 0 0 40 #(inc (* 2 %))]
-			  [akey 0 -30 30 #(double (/ % 10))]))
+			  [akey 30 0 60 #(double (- (/ % 10) 3))]))
 

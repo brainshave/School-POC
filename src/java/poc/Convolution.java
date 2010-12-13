@@ -36,25 +36,25 @@ class NormalConvolution implements ConvolveTask {
 }
 
 class MinimumConvolution implements ConvolveTask {
-    private int min = Integer.MIN_VALUE;
+    private int min = Integer.MAX_VALUE;
     public void add(int x) {
 	if (x < min) min = x;
     }
     public int pop() {
 	int result = min;
-	min = Integer.MIN_VALUE;
+	min = Integer.MAX_VALUE;
 	return result;
     }
 }
 
 class MaximumConvolution implements ConvolveTask {
-    private int max = Integer.MAX_VALUE;
+    private int max = Integer.MIN_VALUE;
     public void add(int x) {
 	if (x > max) max = x;
     }
     public int pop() {
 	int result = max;
-	max = Integer.MAX_VALUE;
+	max = Integer.MIN_VALUE;
 	return result;
     }
 }
@@ -75,6 +75,7 @@ class MedianConvolution implements ConvolveTask {
     public int pop() {
 	int i = -1;
 	int sum = 0;
+	count >>= 1;
 	while(sum < count) {
 	    ++i;
 	    sum += map[i];
@@ -149,23 +150,22 @@ public class Convolution {
 		    //int s = 0;
 		    int x = col - delta_col;
 		    for (int[] mask_col : mask) {
+			int localx = x;
+			if (localx < 0) localx = -x;
+			if (localx >= width) localx = width *2 - x -2;
+
 			int y = row - delta_col;
 			for (int f: mask_col) {
-			    int pixel = 0;
-			    int localx = x;
-			    if (localx < 0) localx = -x;
-			    if (localx >= width) localx = width *2 - x -2;
-			    
 			    int localy = y;
 			    if (localy < 0) localy = -y;
 			    if (localy >= height) localy = height *2 - y -2;
 			    
-			    pixel = in[localy * row_length + 3 * localx + color];
+			    int pixel = in[localy * row_length + 3 * localx + color];
 			    
 			    if (pixel < 0) pixel += 256;
 			    
 			    //s += f * pixel;
-			    task.add(f * pixel);
+			    if (f != 0) task.add(f * pixel);
 			    ++y;
 			}
 			++x;
