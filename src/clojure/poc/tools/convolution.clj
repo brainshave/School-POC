@@ -122,4 +122,7 @@
 		  (reset! grid new-grid)
 		  new-panel)))
 
-(add-tool 51 (MatrixTool. "Splot" (atom {}) (atom nil) (atom nil)))
+(add-tool 51 (MatrixTool. "Splot"
+			  (atom {:algorithm convkey
+				 :matrix (into-array (repeat 3 (int-array '(1 1 1))))})
+			  (atom nil) (atom nil)))
