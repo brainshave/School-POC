@@ -1,4 +1,4 @@
-(defproject poc "0.2.0-SNAPSHOT"
+(defproject poc "0.3.0-SNAPSHOT"
   :description "Project for Digital Image Processing course (Przetwarzanie Obrazów Cyfrowych in Polish)"
   :dependencies [[org.clojure/clojure "1.2.0"]
 		 [org.clojure/clojure-contrib "1.2.0"]
