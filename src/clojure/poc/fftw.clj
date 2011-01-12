@@ -9,7 +9,7 @@
 	name (symbol (str (name direction) "-plan"))]
   `(defn ~name
      (~'[width height inout] ~(cons name '(width height inout inout)))
-     (~'[width height in out] ~(cons name '(width height in out JFFTW3/JFFTW_MEASURE)))
+     (~'[width height in out] ~(cons name '(width height in out 0)))
      (~'[width height in out flags]
       ~(concat '(JFFTW3/jfftw_plan_dft_2d width height in out) [dir] '(flags))))))
 
