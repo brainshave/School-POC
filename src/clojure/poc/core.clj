@@ -6,7 +6,7 @@
 (defn start []
   (async-exec main-window))
 
-(defn interative-first-start []
+(defn interactive-first-start []
   (.start (Thread. swt-loop))
   (start-all-workers)
   (start))

@@ -21,13 +21,13 @@
   `(let [~symbol ~spec]
      (try
        ~(if rest-specs
-	  `(with-malloc ~rest-specs ~@body)
+	  `(with-fftw ~rest-specs ~@body)
 	  `(do ~@body))
        (finally (JFFTW3/jfftw_complex_free ~symbol)))))
     
   
 
-;; obraz wejsciowy -> 2x wieksza tablica floatów (*8) i(do drugi element zaczynajac od 0-elementu)
+;; obraz wejsciowy -> 2x wieksza tablica double'i (*16) i (co drugi element zaczynajac od 0-elementu)
 ;; tworzenie "planu", okreslenie obrazu, w ktora strone, itd.
 ;; rysowanie : przepuścić przez logarytm przed rysowaniem, skalowanie od minimalnej do maksymalnej wartości
 ;; pamiętać o free
