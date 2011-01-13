@@ -32,13 +32,3 @@
 ;; rysowanie : przepuścić przez logarytm przed rysowaniem, skalowanie od minimalnej do maksymalnej wartości
 ;; pamiętać o free
 
-
-;; filtrowanie:
-;; wrzucam do maski takiego samego rozmiaru jak obraz na sam środek maskę (cz. rzeczywistą)
-;; dla każdego koloru i dla maski robisz Forward:
-;; dla każej liczby z tablic wyjściowych (R, I) każdego koloru:
-;; Rm, Im - odpowiednia liczba zesp. z maski
-;; R := R * Rm - I * Im
-;; I := I * Rm + R * Im
-;; każdy kolor <- Backward
-;; normalizacja każdego koloru (?)

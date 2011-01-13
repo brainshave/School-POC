@@ -1,15 +1,34 @@
 (ns poc.tools.convolution
   (:use (little-gui-helper properties)
 	(clojure pprint)
-	(poc tools swt))
+	(poc tools swt fftw))
   (:import (poc Convolution)))
 
 (import-swt)
 
 (def convkey "Splot")
+(def fftwkey "Splot FFT")
 (def minkey "Minimum")
 (def maxkey "Maximum")
 (def medkey "Mediana")
+
+
+;; filtrowanie:
+;; wrzucam do maski takiego samego rozmiaru jak obraz na sam środek maskę (cz. rzeczywistą)
+;; dla każdego koloru i dla maski robisz Forward:
+;; dla każej liczby z tablic wyjściowych (R, I) każdego koloru:
+;; Rm, Im - odpowiednia liczba zesp. z maski
+;; R := R * Rm - I * Im
+;; I := I * Rm + R * Im
+;; każdy kolor <- Backward
+;; normalizacja każdego koloru (?)
+
+(defn fftw-convolution [data-in data-out]
+  (let [width (.width data-in)
+	height (.height data-in)]
+  (with-fftw [gray (malloc (* width height))
+	      
+	      forward (forward-plan [width height])])))
 
 (defn convolution [{:keys [matrix algorithm]} data-in data-out]
   (try 
@@ -93,6 +112,7 @@
 		      del-row (Button. new-panel SWT/PUSH)
 		      go (Button. new-panel SWT/PUSH)
 		      normal-radio (Button. new-panel SWT/RADIO)
+		      fftw-radio (Button. new-panel SWT/RADIO)
 		      median-radio (Button. new-panel SWT/RADIO)
 		      min-radio (Button. new-panel SWT/RADIO)
 		      max-radio (Button. new-panel SWT/RADIO)]
@@ -112,6 +132,7 @@
 			   :+selection.widget-selected
 			   (swap! vs #(assoc % :matrix (matrix @grid))))
 		  (doseq [[radio text] [[normal-radio convkey]
+					[fftw-radio fftwkey]
 					[median-radio medkey]
 					[min-radio minkey]
 					[max-radio maxkey]]]
