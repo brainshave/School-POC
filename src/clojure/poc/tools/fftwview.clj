@@ -10,7 +10,7 @@
   (let [width (.width data-in)
 	height (.height data-in)]
     (with-fftw [buff (malloc (* width height))
-		plan (forward-plan width height buff)]
+		plan (forward-plan height width buff)]
       (DoubleWorker/fillComplex data-in (JFFTW3/jfftw_complex_get buff))
       (JFFTW3/jfftw_execute plan)
       (DoubleWorker/render (JFFTW3/jfftw_complex_get buff) data-out render-type))))

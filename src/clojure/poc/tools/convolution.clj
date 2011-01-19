@@ -51,27 +51,69 @@
 	height (.height data-in)
 	alloc #(malloc (* width height))
 	matrix-width (count matrix)
-	matrix-height (-> matrix first count)]
+	matrix-height (-> matrix first count)
+	top-height (int (+ 1 (/ matrix-height 2)))
+	bottom-height (- top-height 1)
+	left-width (int (+ 1 (/ matrix-width 2)))
+	right-width (- left-width 1)
+	left-half-offset (int (/ matrix-width 2))
+	top-half-offset (int (/ matrix-height 2))]
+	;;left-margin (int (/ (- width matrix-width) 2))
+	;;right-margin (- width left-margin matrix-width)]
     (with-fftw [mat-ptr (alloc)
-		mat-forward (forward-plan width height mat-ptr)]
+		mat-forward (forward-plan height width mat-ptr)]
       (let [mat (JFFTW3/jfftw_complex_get mat-ptr)]
 	;;(time (fill-real-matrix width height matrix mat))
 	(.rewind mat)
-	(dotimes [y matrix-height]
-	  (dotimes [x matrix-width]
+	(dotimes [y top-height]
+	  (dotimes [x left-width]
 	    (doto mat
-	      (.put (double (aget matrix x y)))
+	      (.put (double (aget matrix
+				  (+ x left-half-offset)
+				  (+ y top-half-offset))))
 	      (.put 0.0)))
-	  (dotimes [_ (* 2 (- width matrix-width))]
-	    (.put mat 0.0)))
+	  (dotimes [x (* 2 (- width matrix-width))]
+	    (.put mat 0.0))
+	  (dotimes [x right-width]
+	    (doto mat
+	      (.put (double (aget matrix
+				  x
+				  (+ y top-half-offset))))
+	      (.put 0.0))))
+	(dotimes [xy (* 2 width	(- height matrix-height))]
+	  (.put mat 0.0))
+	(dotimes [y bottom-height]
+	  (dotimes [x left-width]
+	    (doto mat
+	      (.put (double (aget matrix
+				  (+ x left-half-offset)
+				  y)))
+	      (.put 0.0)))
+	  (dotimes [x (* 2 (- width matrix-width))]
+	    (.put mat 0.0))
+	  (dotimes [x right-width]
+	    (doto mat
+	      (.put (double (aget matrix
+				  x
+				  y)))
+	      (.put 0.0))))
+	;; (dotimes [y matrix-height]
+	;;   (dotimes [_ (* 2 left-margin)]
+	;;     (.put mat 0.0))
+	;;   (dotimes [x matrix-width]
+	;;     (doto mat
+	;;       (.put (double (aget matrix x y)))
+	;;       (.put 0.0)))
+	;;   (dotimes [_ (* 2 right-margin)]
+	;;     (.put mat 0.0)))
 	(dotimes [_ (.remaining mat)]
 	  (.put mat 0.0))
 	(.rewind mat)
 	(JFFTW3/jfftw_execute mat-forward)
 	(dotimes [diff 3]
 	  (with-fftw [color-ptr (alloc)
-		      forward (forward-plan width height color-ptr)
-		      backward (backward-plan width height color-ptr)]
+		      forward (forward-plan height width color-ptr)
+		      backward (backward-plan height width color-ptr)]
 	    (let [color (JFFTW3/jfftw_complex_get color-ptr)]
 	      (DoubleWorker/fillComplexColor diff data-in color)
 	      (JFFTW3/jfftw_execute forward)
@@ -185,7 +227,8 @@
 		      fftw-radio (Button. new-panel SWT/RADIO)
 		      median-radio (Button. new-panel SWT/RADIO)
 		      min-radio (Button. new-panel SWT/RADIO)
-		      max-radio (Button. new-panel SWT/RADIO)]
+		      max-radio (Button. new-panel SWT/RADIO)
+		      gauss-check (Button. new-panel SWT/CHECK)]
 		  (doprops grid-scroll
 			   :layout-data "span 2 2, height 200!"
 			   :content grid-container)
@@ -209,6 +252,9 @@
 		    (mode-radio-button radio text vs))
 		  (doprops normal-radio :selection true)
 		  (doprops new-panel :layout layout)
+		  (doprops gauss-check
+			   :layout-data "span 2"
+			   :text "Wypełniaj Gaussem")
 		  (reset! panel new-panel)
 		  (reset! grid new-grid)
 		  new-panel)))
