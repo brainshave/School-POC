@@ -33,6 +33,12 @@
 (defn int-2d-array [col]
   (into-array (map #(into-array Integer/TYPE %) col)))
 
+(defn sane-gauss [width height]
+  (int-2d-array
+   (normalize-2d
+    (bit-shift-left 1 16)
+    (gauss-2-dim width height))))
+
 (defn gauss-convolve [{width xkey, height ykey} data-in data-out]
   (Convolution/filter data-in data-out
 		      (int-2d-array

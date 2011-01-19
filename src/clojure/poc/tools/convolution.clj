@@ -1,7 +1,8 @@
 (ns poc.tools.convolution
   (:use (little-gui-helper properties)
 	(clojure pprint)
-	(poc tools swt fftw))
+	(poc tools swt fftw)
+	(poc.tools gauss))
   (:import (poc Convolution DoubleWorker)
 	   com.schwebke.jfftw3.JFFTW3))
 
@@ -33,7 +34,6 @@
 	right-margin (int (- width matrix-width left-margin))
 	fill-zeros #(dotimes [_ (* % 2)] (.put buff 0.0))]
   (.rewind buff)
-  ;;(time (fill-zeros (* top-margin width)))
   (let [asdf (* 2 top-margin width)]
   (time (dotimes [_ asdf]
 	  (.put buff 0.0))))
@@ -58,12 +58,9 @@
 	right-width (- left-width 1)
 	left-half-offset (int (/ matrix-width 2))
 	top-half-offset (int (/ matrix-height 2))]
-	;;left-margin (int (/ (- width matrix-width) 2))
-	;;right-margin (- width left-margin matrix-width)]
     (with-fftw [mat-ptr (alloc)
 		mat-forward (forward-plan height width mat-ptr)]
       (let [mat (JFFTW3/jfftw_complex_get mat-ptr)]
-	;;(time (fill-real-matrix width height matrix mat))
 	(.rewind mat)
 	(dotimes [y top-height]
 	  (dotimes [x left-width]
@@ -97,15 +94,6 @@
 				  x
 				  y)))
 	      (.put 0.0))))
-	;; (dotimes [y matrix-height]
-	;;   (dotimes [_ (* 2 left-margin)]
-	;;     (.put mat 0.0))
-	;;   (dotimes [x matrix-width]
-	;;     (doto mat
-	;;       (.put (double (aget matrix x y)))
-	;;       (.put 0.0)))
-	;;   (dotimes [_ (* 2 right-margin)]
-	;;     (.put mat 0.0)))
 	(dotimes [_ (.remaining mat)]
 	  (.put mat 0.0))
 	(.rewind mat)
@@ -132,12 +120,6 @@
 		    (.put (- (* R Rm) (* I Im)))
 		    (.put (+ (* I Rm) (* R Im))))))
 	      (JFFTW3/jfftw_execute backward)
-	      ;; (.rewind color)
-	      ;; (println (reduce min (for [i (range 0 (.limit color))]
-	      ;; 			     (.get color))))
-	      ;; (.rewind color)
-	      ;; (println (reduce max (for [i (range 0 (.limit color))]
-	      ;; (.get color))))
 	      (.rewind color)
 	      (DoubleWorker/renderColor diff color data-out))))))))
 	      
@@ -153,6 +135,7 @@
 
 (defprotocol IGrid
   (matrix [grid])
+  (fill-matrix [grid matrix])
   (dispose [grid]))
 
 (defrecord Grid
@@ -171,6 +154,18 @@
 					   (aset array col-num row-num
 						 (Integer/parseInt (.getText input)))))))))))
 		   array))
+  (fill-matrix [grid matrix]
+	       (dorun
+		(->> inputs
+		     (map-indexed
+		      (fn [col-num col]
+			(dorun
+			 (->> col
+			      (map-indexed
+			       (fn [row-num input]
+				 (doprops
+				  input :text
+				  (str (aget matrix col-num row-num))))))))))))
   (dispose [grid] (doseq [col inputs, x col] (.dispose x))))
 		   
 					
@@ -190,12 +185,19 @@
     (doto panel .layout .pack)
     (Grid. inputs new-width new-height)))
 
-(defn grid-control-button [parent grid-atom button +cols +rows]
+(defn fill-gauss [grid]
+  (let [{:keys [width height]} grid]
+    (fill-matrix grid (sane-gauss width height))))
+
+(defn grid-control-button [parent grid-atom button +cols +rows gauss-check]
   (doprops button
 	   :text (let [num (if (not= 0 +cols) +cols +rows)]
 		   (if (< 0 num) (str "+" num) (str num)))
 	   :+selection.widget-selected
-	   (reset! grid-atom (create-grid parent @grid-atom +cols +rows))))
+	   (let [grid (create-grid parent @grid-atom +cols +rows)]
+	     (when (.getSelection gauss-check)
+	       (fill-gauss grid))
+	     (reset! grid-atom grid))))
 
 (defn mode-radio-button [button text vs-atom]
   (doprops button
@@ -238,7 +240,7 @@
 						[del-col -2 0]
 						[add-row 0 2]
 						[del-row 0 -2]]]
-		    (grid-control-button grid-container grid button +cols +rows))
+		    (grid-control-button grid-container grid button +cols +rows gauss-check))
 		  (doprops go
 			   :layout-data "span 1 3"
 			   :text "!"
@@ -254,7 +256,14 @@
 		  (doprops new-panel :layout layout)
 		  (doprops gauss-check
 			   :layout-data "span 2"
-			   :text "Wypełniaj Gaussem")
+			   :text "Wypełniaj Gaussem"
+			   :+selection.widget-selected
+			   (if (.getSelection gauss-check)
+			     (fill-gauss @grid)
+			     (let [{:keys [width height]} @grid]
+			       (fill-matrix @grid
+					    (into-array
+					     (repeat width (int-array height 1)))))))
 		  (reset! panel new-panel)
 		  (reset! grid new-grid)
 		  new-panel)))
