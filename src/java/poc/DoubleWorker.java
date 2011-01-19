@@ -8,9 +8,9 @@ public class DoubleWorker {
 	final byte[] data = from.data;
 	final int pixelsPerLine = from.width * 3;
 	to.rewind();
-	for(int lineStart = 0; lineStart < data.length; lineStart += from.bytesPerLine) {
+	for(int lineStart = diff; lineStart < data.length; lineStart += from.bytesPerLine) {
 	    int iend = lineStart + pixelsPerLine;
-	    for(int i = lineStart + diff; i < iend; i+=3) {
+	    for(int i = lineStart; i < iend; i+=3) {
 		int c = data[i];
 		if (c < 0) c += 256;
 		to.put(c);
@@ -23,25 +23,29 @@ public class DoubleWorker {
 	final byte[] data = to.data;
 	final int pixelsPerLine = to.width * 3;
 	int pixel;
-	final int cap = from.capacity();
-	double r, i, max = 0;
+	from.rewind();
+	final int cap = from.limit();
+	double r, i = 0;
 
-	//for (int p = 0; p < cap; p+=2) {
-	//  r = from.get(p);
-	    //from.get(p+1);
-	    //r = Math.log(1.0 + renderType.calc(r, i));
-	    //r = Math.log(1.0 + Math.sqrt(r*r + i*i));
-	    //if (r > max) max = r;
-	    //from.put(p, r);
-	//}
+	double max = from.get();
+	double min = max;
+	double num;
+	from.get(); // unreal
+	for (int p = 2; p < cap; p += 2) {
+	    num = from.get();
+	    if (num > max) max = num;
+	    if (num < min) min = num;
+	    from.get();
+	}
 
-	//final double factor = 255.0/max;
-	for (int lineStart = 0; lineStart < data.length; lineStart += to.bytesPerLine) {
+	double factor = 255 / (max - min);
+	
+	from.rewind();
+	for (int lineStart = diff; lineStart < data.length; lineStart += to.bytesPerLine) {
 	    int pend = lineStart + pixelsPerLine;
-	    for(int p = lineStart; p < pend; ++p) {
-		byte value = ByteWorker.toByte((int) (from.get()));
+	    for(int p = lineStart; p < pend; p += 3) {
+		data[p] = ByteWorker.toByte((int) ((factor * (from.get() - min))));
 		from.get(); // unreal
-		data[p] = value;
 	    }
 	}
 	from.rewind();
@@ -51,9 +55,9 @@ public class DoubleWorker {
 	final byte[] data = from.data;
 	final int pixelsPerLine = from.width * 3;
 	to.rewind();
-	for(int lineStart = 0; lineStart < data.length; lineStart += from.bytesPerLine) {
+	for (int lineStart = 0; lineStart < data.length; lineStart += from.bytesPerLine) {
 	    int iend = lineStart + pixelsPerLine;
-	    for(int i = lineStart; i < iend; ++i) {
+	    for (int i = lineStart; i < iend; ++i) {
 		int r = data[i++];
 		int g = data[i++];
 		int b = data[i];

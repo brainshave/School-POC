@@ -2,7 +2,8 @@
   (:use (little-gui-helper properties)
 	(clojure pprint)
 	(poc tools swt fftw))
-  (:import (poc Convolution)))
+  (:import (poc Convolution DoubleWorker)
+	   com.schwebke.jfftw3.JFFTW3))
 
 (import-swt)
 
@@ -23,17 +24,86 @@
 ;; każdy kolor <- Backward
 ;; normalizacja każdego koloru (?)
 
-(defn fftw-convolution [data-in data-out]
-  (let [width (.width data-in)
-	height (.height data-in)]
-  (with-fftw [gray (malloc (* width height))
-	      
-	      forward (forward-plan [width height])])))
+(defn fill-real-matrix [width height matrix buff]
+  (let [matrix-width (count matrix)
+	matrix-height (-> matrix first count)
+	top-margin (int (/ (- height matrix-height) 2))
+	bottom-margin (int (- height top-margin matrix-height))
+	left-margin (int (/ (- width matrix-width) 2))
+	right-margin (int (- width matrix-width left-margin))
+	fill-zeros #(dotimes [_ (* % 2)] (.put buff 0.0))]
+  (.rewind buff)
+  ;;(time (fill-zeros (* top-margin width)))
+  (let [asdf (* 2 top-margin width)]
+  (time (dotimes [_ asdf]
+	  (.put buff 0.0))))
+  (dotimes [x matrix-height]
+    (fill-zeros left-margin)
+    (dotimes [y matrix-width]
+      (doto buff
+	(.put (double (aget matrix x y)))
+	(.put 0.0)))
+    (fill-zeros right-margin))
+  (time (fill-zeros (* bottom-margin width)))))
 
+(defn fftw-convolution [matrix data-in data-out]
+  (let [width (.width data-in)
+	height (.height data-in)
+	alloc #(malloc (* width height))
+	matrix-width (count matrix)
+	matrix-height (-> matrix first count)]
+    (with-fftw [mat-ptr (alloc)
+		mat-forward (forward-plan width height mat-ptr)]
+      (let [mat (JFFTW3/jfftw_complex_get mat-ptr)]
+	;;(time (fill-real-matrix width height matrix mat))
+	(.rewind mat)
+	(dotimes [y matrix-height]
+	  (dotimes [x matrix-width]
+	    (doto mat
+	      (.put (double (aget matrix x y)))
+	      (.put 0.0)))
+	  (dotimes [_ (* 2 (- width matrix-width))]
+	    (.put mat 0.0)))
+	(dotimes [_ (.remaining mat)]
+	  (.put mat 0.0))
+	(.rewind mat)
+	(JFFTW3/jfftw_execute mat-forward)
+	(dotimes [diff 3]
+	  (with-fftw [color-ptr (alloc)
+		      forward (forward-plan width height color-ptr)
+		      backward (backward-plan width height color-ptr)]
+	    (let [color (JFFTW3/jfftw_complex_get color-ptr)]
+	      (DoubleWorker/fillComplexColor diff data-in color)
+	      (JFFTW3/jfftw_execute forward)
+	      (.rewind color)
+	      (.rewind mat)
+	      (dotimes [_ (* width height)]
+		(.mark color)
+		(let [Rm (.get mat)
+		      Im (.get mat)
+		      R  (.get color)
+		      I  (.get color)]
+		  (doto color
+		    (.reset) ; back to marked pos
+		    ;; R := R * Rm - I * Im
+		    ;; I := I * Rm + R * Im
+		    (.put (- (* R Rm) (* I Im)))
+		    (.put (+ (* I Rm) (* R Im))))))
+	      (JFFTW3/jfftw_execute backward)
+	      ;; (.rewind color)
+	      ;; (println (reduce min (for [i (range 0 (.limit color))]
+	      ;; 			     (.get color))))
+	      ;; (.rewind color)
+	      ;; (println (reduce max (for [i (range 0 (.limit color))]
+	      ;; (.get color))))
+	      (.rewind color)
+	      (DoubleWorker/renderColor diff color data-out))))))))
+	      
 (defn convolution [{:keys [matrix algorithm]} data-in data-out]
   (try 
     (condp = algorithm
 	convkey (Convolution/filter data-in data-out matrix)
+	fftwkey (fftw-convolution matrix data-in data-out)
 	minkey (Convolution/minimum data-in data-out matrix)
 	maxkey (Convolution/maximum data-in data-out matrix)
 	medkey (Convolution/median data-in data-out matrix))
