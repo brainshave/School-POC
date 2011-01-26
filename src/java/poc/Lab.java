@@ -16,19 +16,19 @@ public class Lab extends XYZ {
 	final double fy = f(y / Yr);
 	final double fz = f(z / Zr);
 
-	buff[0] = (int)((116.0 * fy) - 16.0);
-	buff[1] = (int)(500.0 * (fx - fy));
-	buff[2] = (int)(200.0 * (fy - fz));
+	buff[0] = (int)((((116.0 * fy) - 16.0)*255.0) / 100.0);
+	buff[1] = (int)(500.0 * (fx - fy)) + 128;
+	buff[2] = (int)(200.0 * (fy - fz)) + 128;
 	return buff;
     }
 
     public final int[] toRGB
 	(final int[] color)
     {
-	final double L = color[0];
+	final double L = ((color[0] * 100.0) / 255.0);
 	final double fy = (L + 16.0) / 116.0;
-	final double fx = (color[1] / 500.0) + fy;
-	final double fz = fy - (color[2] / 200.0);
+	final double fx = ((color[1] - 128) / 500.0) + fy;
+	final double fz = fy - ((color[2] - 128) / 200.0);
 
 	final double fx3 = fx * fx * fx;
 	final double fy3 = fy * fy * fy;
