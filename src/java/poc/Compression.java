@@ -6,7 +6,7 @@ import org.eclipse.swt.graphics.PaletteData;
 
 public class Compression {
     public static int[][] imageToLab (ImageData image) {
-	boolean rgb = ByteWorker.isBGR(image);
+	boolean bgr = ByteWorker.isBGR(image);
 	Lab labConv = new Lab();
 	int pixelsPerLine = image.width * 3;
 	int lineWidth = image.bytesPerLine;
@@ -27,14 +27,14 @@ public class Compression {
 	    even_row = !even_row;
 	    end = lineStart + pixelsPerLine;
 	    for (int i = lineStart; i < end; ) {
-		if (rgb) {
-		    r = data[i++];
-		    g = data[i++];
+		if (bgr) {
 		    b = data[i++];
+		    g = data[i++];
+		    r = data[i++];
 		} else {
-		    b = data[i++];
-		    g = data[i++];
 		    r = data[i++];
+		    g = data[i++];
+		    b = data[i++];
 		}
 
 		if (r < 0) r += 256;
