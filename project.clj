@@ -13,4 +13,5 @@
   :main poc.core
   :source-path "src/clojure"
   :java-source-path "src/java"
+  :javac-options {:debug "on"}
   :jvm-opts ["-Xmx1g" "-Xms400m"])
