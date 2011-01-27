@@ -27,24 +27,13 @@ public class DoubleWorker {
 	final int cap = from.limit();
 	double r, i = 0;
 
-	double max = from.get();
-	double min = max;
-	double num;
-	from.get(); // unreal
-	for (int p = 2; p < cap; p += 2) {
-	    num = from.get();
-	    if (num > max) max = num;
-	    if (num < min) min = num;
-	    from.get();
-	}
-
-	double factor = 255 / (max - min);
+	double factor = 1.0/(double)(to.width * to.height);
 	
 	from.rewind();
 	for (int lineStart = diff; lineStart < data.length; lineStart += to.bytesPerLine) {
 	    int pend = lineStart + pixelsPerLine;
 	    for(int p = lineStart; p < pend; p += 3) {
-		data[p] = ByteWorker.toByte((int) ((factor * (from.get() - min))));
+		data[p] = ByteWorker.toByte((int) ((factor * from.get())));
 		from.get(); // unreal
 	    }
 	}

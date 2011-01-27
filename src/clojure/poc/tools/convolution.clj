@@ -25,27 +25,6 @@
 ;; każdy kolor <- Backward
 ;; normalizacja każdego koloru (?)
 
-(defn fill-real-matrix [width height matrix buff]
-  (let [matrix-width (count matrix)
-	matrix-height (-> matrix first count)
-	top-margin (int (/ (- height matrix-height) 2))
-	bottom-margin (int (- height top-margin matrix-height))
-	left-margin (int (/ (- width matrix-width) 2))
-	right-margin (int (- width matrix-width left-margin))
-	fill-zeros #(dotimes [_ (* % 2)] (.put buff 0.0))]
-  (.rewind buff)
-  (let [asdf (* 2 top-margin width)]
-  (time (dotimes [_ asdf]
-	  (.put buff 0.0))))
-  (dotimes [x matrix-height]
-    (fill-zeros left-margin)
-    (dotimes [y matrix-width]
-      (doto buff
-	(.put (double (aget matrix x y)))
-	(.put 0.0)))
-    (fill-zeros right-margin))
-  (time (fill-zeros (* bottom-margin width)))))
-
 (defn fftw-convolution [matrix data-in data-out]
   (let [width (.width data-in)
 	height (.height data-in)
@@ -60,39 +39,44 @@
 	top-half-offset (int (/ matrix-height 2))]
     (with-fftw [mat-ptr (alloc)
 		mat-forward (forward-plan height width mat-ptr)]
-      (let [mat (JFFTW3/jfftw_complex_get mat-ptr)]
+      (let [mat (JFFTW3/jfftw_complex_get mat-ptr)
+	    sumarum (reduce + (for [row matrix a row] a))]
 	(.rewind mat)
 	(dotimes [y top-height]
 	  (dotimes [x left-width]
 	    (doto mat
-	      (.put (double (aget matrix
-				  (+ x left-half-offset)
-				  (+ y top-half-offset))))
+	      (.put (double (/ (aget matrix
+				     (+ x left-half-offset)
+				     (+ y top-half-offset))
+			       sumarum)))
 	      (.put 0.0)))
 	  (dotimes [x (* 2 (- width matrix-width))]
 	    (.put mat 0.0))
 	  (dotimes [x right-width]
 	    (doto mat
-	      (.put (double (aget matrix
-				  x
-				  (+ y top-half-offset))))
+	      (.put (double (/ (aget matrix
+				     x
+				     (+ y top-half-offset))
+			       sumarum)))
 	      (.put 0.0))))
 	(dotimes [xy (* 2 width	(- height matrix-height))]
 	  (.put mat 0.0))
 	(dotimes [y bottom-height]
 	  (dotimes [x left-width]
 	    (doto mat
-	      (.put (double (aget matrix
-				  (+ x left-half-offset)
-				  y)))
+	      (.put (double (/ (aget matrix
+				     (+ x left-half-offset)
+				     y)
+			       sumarum)))
 	      (.put 0.0)))
 	  (dotimes [x (* 2 (- width matrix-width))]
 	    (.put mat 0.0))
 	  (dotimes [x right-width]
 	    (doto mat
-	      (.put (double (aget matrix
-				  x
-				  y)))
+	      (.put (double (/ (aget matrix
+				     x
+				     y)
+			       sumarum)))
 	      (.put 0.0))))
 	(dotimes [_ (.remaining mat)]
 	  (.put mat 0.0))
