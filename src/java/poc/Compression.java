@@ -92,10 +92,38 @@ public class Compression {
 	return imageData;
     }
 
+    public static int[] testTransfering(BlockStream in, ReadStream out) {
+	int i = 0;
+	try {
+	    for(int[] block = in.nextBlock(); block != null; block = in.nextBlock()) {
+		++i;
+		out.putBlock(block);
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	} finally {
+	    System.out.println("Blokow: " + i);
+	}
+	return out.output;
+    }
+    
     public static void main(String[] args) {
 	ImageData data = new ImageData(args[0]);
 	int[][] lab = imageToLab(data);
-	ImageData data2 = labToImage(lab[0], lab[1], lab[2], data.width, data.height);
+
+	int abwidth = (data.width + 1) / 2;
+	int abheight = (data.height + 1) / 2;
+	BlockStream Los = new BlockStream(data.width, data.height, lab[0]);
+	BlockStream aos = new BlockStream(abwidth, abheight, lab[1]);
+	BlockStream bos = new BlockStream(abwidth, abheight, lab[2]);
+	ReadStream Lis = new ReadStream(data.width, data.height);
+	ReadStream ais = new ReadStream(abwidth, abheight);
+	ReadStream bis = new ReadStream(abwidth, abheight);
+	
+	ImageData data2 = labToImage(testTransfering(Los, Lis),
+				     testTransfering(aos, ais),
+				     testTransfering(bos, bis),
+				     data.width, data.height);
 	ImageLoader loader = new ImageLoader();
 	loader.data = new ImageData[] {data2};
 	loader.save(args[0] + ".png", SWT.IMAGE_PNG);
