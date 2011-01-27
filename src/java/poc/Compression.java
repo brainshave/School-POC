@@ -81,7 +81,7 @@ public class Compression {
 		lab[0] = Ls[Lptr++];
 		lab[1] = as[abptr];
 		lab[2] = bs[abptr];
-		if((i - lineStart) % 2 == 0) abptr++;
+		if((i - lineStart) % 2 == 1) abptr++;
 
 		rgb = labConv.toRGB(lab);
 		data[i++] = ByteWorker.toByte(rgb[0]);
