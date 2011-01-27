@@ -44,7 +44,7 @@ public class Compression {
 
 		lab = labConv.fromRGB(r, g, b);
 		Ls[Lptr++] = lab[0];
-		if (even_row && Lptr % 2 == 0) {
+		if (even_row && (i - lineStart) % 2 == 1) {
 		    as[abptr] = lab[1];
 		    bs[abptr] = lab[2];
 		    abptr++;
@@ -68,7 +68,7 @@ public class Compression {
 	int[] rgb;
 	int Lptr = 0;
 	int abptr = 0;
-	final int abRowWidth = width / 2;
+	final int abRowWidth = (width + 1) / 2;
 	int abptrStart = -abRowWidth;
 
 	boolean evenRow = false;
@@ -81,7 +81,7 @@ public class Compression {
 		lab[0] = Ls[Lptr++];
 		lab[1] = as[abptr];
 		lab[2] = bs[abptr];
-		if(Lptr % 2 == 0) abptr++;
+		if((i - lineStart) % 2 == 0) abptr++;
 
 		rgb = labConv.toRGB(lab);
 		data[i++] = ByteWorker.toByte(rgb[0]);

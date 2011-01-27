@@ -28,13 +28,16 @@ public class BlockStream {
 	    for (; i < rowEnd && i < width; ++i) {
 		buff[buffPtr++] = input[sourcePtr++];
 	    }
+	    sourcePtr += width - (i - col);
 	    lastVal = buff[buffPtr-1];
+	    buff[buffPtr-1] = 0;
 	    for (; i < rowEnd; ++i) {
 		buff[buffPtr++] = lastVal;
 	    }
-	    sourcePtr += width - 8;
 	}
 	while(buffPtr < 64) buff[buffPtr++] = lastVal;
+	for(int i = 64 - 8; i < 64; ++i)
+	    buff[i] = 0;
 	
 	col += 8;
 	if (col >= width) {

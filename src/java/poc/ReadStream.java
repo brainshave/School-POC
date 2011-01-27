@@ -25,7 +25,7 @@ public class ReadStream {
 	    for (; i < rowEnd && i < width; ++i) {
 		output[outputPtr++] = block[blockPtr++];
 	    }
-	    outputPtr += width - 8;
+	    outputPtr += width - (i - col);
 	    blockPtr += rowEnd - i;
 	}
 	
