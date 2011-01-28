@@ -11,10 +11,10 @@ public class ReadStream {
 	this.output = new int[width * height];
     }
 
-    public final void putBlock(int[] block) {
+    public final boolean putBlock(int[] block) {
 	int outputPtr = row * width + col;
 	if (outputPtr >= output.length) {
-	    return;
+	    return false;
 	}
 
 	int blockPtr = 0;
@@ -34,5 +34,11 @@ public class ReadStream {
 	    col = 0;
 	    row += 8;
 	}
+
+	outputPtr = row * width + col;
+	if (outputPtr >= output.length) {
+	    return false;
+	}
+	return true;
     }
 }

@@ -5,6 +5,14 @@ import org.eclipse.swt.graphics.PaletteData;
 import org.eclipse.swt.graphics.ImageLoader;
 import org.eclipse.swt.SWT;
 
+import java.util.zip.GZIPOutputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
+import java.util.zip.GZIPInputStream;
+import java.io.FileInputStream;
+import java.io.InputStream;
+
 public class Compression {
     public static int[][] imageToLab (ImageData image) {
 	boolean bgr = ByteWorker.isBGR(image);
@@ -92,6 +100,90 @@ public class Compression {
 	return imageData;
     }
 
+    public static void writeBlocks(BlockStream input, OutputStream output, Quantification quant) throws java.io.IOException{
+	CosineTransform ctrans = new CosineTransform();
+	ZigZag zz = new ZigZag();
+	for(int[] block = input.nextBlock(); block != null; block = input.nextBlock()) {
+	    double[] cosine = ctrans.cosine(block);
+	    int[] quanted = quant.quantificate(cosine);
+	    byte[] z = zz.zig(quanted);
+	    output.write(z);
+	}   
+    }
+
+    public static void readBlocks(InputStream input, ReadStream output, Quantification quant)
+	throws java.io.FileNotFoundException, java.io.IOException {
+	boolean readNext = true;
+	byte[] buff = new byte[64];
+	CosineTransform ctrans = new CosineTransform();
+	ZigZag zz = new ZigZag();
+	while(readNext) {
+	    for(int i = 0; i < 64; ++i) {
+		buff[i] = (byte) input.read();
+	    }
+	    int[] z = zz.zag(buff);
+	    double[] unqua = quant.unquantificate(z);
+	    int[] block = ctrans.uncosine(unqua);
+	    readNext = output.putBlock(block);
+	}
+    }
+    
+    public static void compress(ImageData data, String path, int quality)
+	throws java.io.FileNotFoundException, java.io.IOException {
+	GZIPOutputStream output = new GZIPOutputStream(new FileOutputStream(path));
+	
+	output.write(quality);
+	for(int i = 0; i <= 24; i += 8) {
+	    output.write((data.width >> i) & 0xff);
+	    output.write((data.height >> i) & 0xff);
+	}
+	int[][] lab = imageToLab(data);
+
+	int abwidth = (data.width + 1) / 2;
+	int abheight = (data.height + 1) / 2;
+	BlockStream Los = new BlockStream(data.width, data.height, lab[0]);
+	BlockStream aos = new BlockStream(abwidth, abheight, lab[1]);
+	BlockStream bos = new BlockStream(abwidth, abheight, lab[2]);
+	Quantification Lquant = new Quantification(Quantification.MATRIX_LUMINANCE, quality);
+	Quantification abquant = new Quantification(Quantification.MATRIX_AB, quality);
+	
+	writeBlocks(Los, output, Lquant);
+	writeBlocks(aos, output, abquant);
+	writeBlocks(bos, output, abquant);
+	output.close();
+    }
+
+    public static ImageData uncompress(String path)
+	throws java.io.FileNotFoundException, java.io.IOException {
+	GZIPInputStream input = new GZIPInputStream(new FileInputStream(path));
+
+	int quality = input.read();
+	int width = 0;
+	int height = 0;
+	for (int i = 0; i <= 24; i += 8) {
+	    width |= (input.read() & 0xff) << i;
+	    height |= (input.read() & 0xff) << i;
+	}
+	System.out.println("Q: " + quality + " W: " + width + " H: " + height);
+	
+	int abwidth = (width + 1) / 2;
+	int abheight = (height + 1) / 2;
+	ReadStream Lis = new ReadStream(width, height);
+	ReadStream ais = new ReadStream(abwidth, abheight);
+	ReadStream bis = new ReadStream(abwidth, abheight);
+	Quantification Lquant = new Quantification(Quantification.MATRIX_LUMINANCE, quality);
+	Quantification abquant = new Quantification(Quantification.MATRIX_AB, quality);
+	readBlocks(input, Lis, Lquant);
+	readBlocks(input, ais, abquant);
+	readBlocks(input, bis, abquant);
+
+	input.close();
+	
+	ImageData data = labToImage(Lis.output, ais.output, bis.output,
+	    width, height);
+	return data;
+    }
+    
     public static int[] testTransfering(BlockStream in, ReadStream out, double[] matrix, double quality) {
 	CosineTransform cosine = new CosineTransform();
 	Quantification quant = new Quantification(matrix, quality);
@@ -132,8 +224,15 @@ public class Compression {
 
 
     
-    public static void main(String[] args) {
-	testFile(args);
+    public static void main(String[] args) 
+	throws java.io.FileNotFoundException, java.io.IOException {
+	ImageData data = new ImageData(args[0]);
+	int quality = Integer.parseInt(args[1]);
+	compress(data, args[0] + ".gzpeg", quality);
+	ImageData data2 = uncompress(args[0] + ".gzpeg");
+	ImageLoader loader = new ImageLoader();
+	loader.data = new ImageData[] {data2};
+	loader.save(args[0] + ".gzpeg.png", SWT.IMAGE_PNG);
     }
 
     public static void testFile(String[] args) {
@@ -203,6 +302,16 @@ public class Compression {
 	for(int r = 0; r < 8; ++r) {
 	    for(int c = 0; c < 8; ++c) {
 		System.out.format("%8.2f ", table[r*8 + c]);
+	    }
+	    System.out.println();
+	}
+	System.out.println();
+    }
+
+    final static void visualize(byte[] table) {	
+	for(int r = 0; r < 8; ++r) {
+	    for(int c = 0; c < 8; ++c) {
+		System.out.format("%5d ", table[r*8 + c]);
 	    }
 	    System.out.println();
 	}
