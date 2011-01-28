@@ -23,14 +23,24 @@ public class Quantification {
 	99, 99, 99, 99, 99, 99, 99, 99
     };
 
-    private final double [] matrix = new double[64];
+    final double [] matrix = new double[64];
     private final int [] ibuff = new int[64];
     private final double[] dbuff = new double[64];
+
+    // public Quantification(double quality) {
+    // 	int ptr = 0;
+    // 	for (int i=1; i < 9; ++i) {
+    // 	    for (int j=1;j<9;++j) {
+    // 		matrix[ptr++] = (j < 10 - i) ? (j * (9-i) + i * (9-j)) : 99;
+    // 	    }
+    // 	}
+    // }
     
     public Quantification(double[] matrix, double quality) {
 	if (quality > 50) {
 	    for(int i = 0 ; i < 64; ++i) {
 		this.matrix[i] = (matrix[i] * (101.0 - quality)) / 50;
+		if(this.matrix[i] < 9) this.matrix[i] = 9;
 	    }
 	} else if (quality < 50) {
 	    for(int i = 0; i < 64; ++i) {

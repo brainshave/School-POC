@@ -107,18 +107,18 @@ public class Compression {
 		    int a = quanted[g];
 		    if (a > max) max = a;
 		    if (a < min) min = a;
-		    //if(a > 127) quanted[g] = 127;
-		    //else if(a < -128) quanted[g] = -128;
+		    if(a > 127) quanted[g] = 127;
+		    else if(a < -128) quanted[g] = -128;
 		}
 		double[] unquanted = quant.unquantificate(quanted);
 		int[] uncos = cosine.uncosine(unquanted);
-		if(i == 3479) {
-		    for(int g = 0; g < 64; ++g) {
-			System.out.format("%10d %10f %10d %10f %10d\n",
-					  block[g], cos[g], quanted[g],
-					  unquanted[g], uncos[g]);
-		    }
-		}
+		// if(i == 3479) {
+		//     for(int g = 0; g < 64; ++g) {
+		// 	System.out.format("%10d %10f %10d %10f %10d\n",
+		// 			  block[g], cos[g], quanted[g],
+		// 			  unquanted[g], uncos[g]);
+		//     }
+		// }
 		out.putBlock(uncos);
 	    }
 	} catch (Exception e) {
@@ -129,9 +129,15 @@ public class Compression {
 	}
 	return out.output;
     }
+
+
     
     public static void main(String[] args) {
-	ImageData data = new ImageData(args[0]);
+	testFile(args);
+    }
+
+    public static void testFile(String[] args) {
+    	ImageData data = new ImageData(args[0]);
 	int[][] lab = imageToLab(data);
 
 	int abwidth = (data.width + 1) / 2;
@@ -153,7 +159,10 @@ public class Compression {
 	ImageLoader loader = new ImageLoader();
 	loader.data = new ImageData[] {data2};
 	loader.save(args[0] + ".png", SWT.IMAGE_PNG);
-
+    }
+    
+    public static void testWikiBlock() {
+    
 	int[] testblock = {
 	    52, 55, 61, 66, 70, 61, 64, 73,
 	    63, 59, 55, 90, 109, 85, 69, 72,
