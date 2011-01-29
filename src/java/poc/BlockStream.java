@@ -5,16 +5,18 @@ public class BlockStream {
     private int[] buff = new int[64];
     private int[] input;
     private int row = 0, col = 0;
+    private final int size;
 
     public BlockStream(int width, int height, int[] input) {
 	this.width = width;
 	this.height = height;
+	this.size = width * height;
 	this.input = input;
     }
 
     public final int[] nextBlock() {
 	int sourcePtr = row * width + col;
-	if (sourcePtr >= input.length) {
+	if (sourcePtr >= size) {
 	    return null;
 	}
 	int buffPtr = 0;

@@ -1,19 +1,20 @@
 package poc;
 
 public class ReadStream {
-    private final int width, height;
+    private final int width, height, size;
     int row = 0, col = 0;
     public final int[] output;
 
     public ReadStream(int width, int height) {
 	this.width = width;
 	this.height = height;
-	this.output = new int[width * height];
+	this.size = width * height;
+	this.output = new int[size];
     }
 
     public final boolean putBlock(int[] block) {
 	int outputPtr = row * width + col;
-	if (outputPtr >= output.length) {
+	if (outputPtr >= size) {
 	    return false;
 	}
 
@@ -36,7 +37,7 @@ public class ReadStream {
 	}
 
 	outputPtr = row * width + col;
-	if (outputPtr >= output.length) {
+	if (outputPtr >= size) {
 	    return false;
 	}
 	return true;
