@@ -17,7 +17,7 @@
 is [plot plot-data canvas]."}
   *plots* (atom (sorted-map)))
 
-(defrecord ^{:doc "Specification of a plot. Plots are redrawed using
+(defrecord ^{:doc "Specification of a plot. Plots are redrawn
   each time *backing-data* is changed. f takes two arguments:
   image-data to draw this plot on and data stored in *backing-data*
   for approriate key."}
