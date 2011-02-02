@@ -1,5 +1,6 @@
 (ns poc.image
-  (:use (poc workers swt utils)))
+  (:use (poc workers swt utils))
+  (:import poc.Compression))
 
 (import-swt)
 
@@ -19,7 +20,10 @@
 
 
 (defn open-file [f]
-  (let [data (ImageData. f)]
+  (let [data 
+	(if (.endsWith (.toLowerCase f) ".swftw")
+	  (Compression/uncompress f)
+	  (ImageData. f))]
     (if (.. data palette isDirect)
       (let [clone1 (future (.clone data))
 	    clone2 (future (.clone data))
@@ -27,6 +31,15 @@
 	(send-task *data* (fn [_] [data @clone1 @clone2 @clone3])))
       (message "Błąd: Indeskowany obrazek"
 	       "Program nie działa na indeksowanych obrazkach."))))
+
+(defn save-swftw [f quality]
+  (Compression/compress (second @*data*) f quality))
+
+(defn save-png [f]
+  (let [data (second @*data*)
+	loader (ImageLoader.)]
+    (set! (.data loader) (into-array [data]))
+    (.save loader f SWT/IMAGE_PNG)))
 
 (defn run-operations
   "Runs through all :fns in *candies* on *data*.

@@ -12,8 +12,34 @@
 
 (defn open-file-dialog [parent]
   (when-let [f (.open (doprops (FileDialog. parent SWT/OPEN)
-			       :filter-extensions (into-array ["*.jpg;*.png;*.bmp"])))]
+			       :filter-extensions (into-array ["*.jpg;*.png;*.bmp;*.swftw"])))]
     (open-file f)))
+
+(defn save-file-dialog [parent]
+  (when-let [f (.open (doprops (FileDialog. parent SWT/SAVE)
+			       :filter-extensions (into-array ["*.png;*.swftw"])))]
+    (if (.endsWith (.toLowerCase f) ".swftw")
+      (try
+      (let [dialog (Shell. parent (reduce bit-or [SWT/APPLICATION_MODAL SWT/TITLE]))
+	    layout (MigLayout. "wrap 2" "[grow,fill,300::][fill,100::]")
+	    slider (Scale. dialog SWT/HORIZONTAL)
+	    label (Label. dialog SWT/HORIZONTAL)
+	    ok-button (Button. dialog SWT/PUSH)
+	    cancel-button (Button. dialog SWT/PUSH)]
+	(doprops slider :minimum 1 :maximum 100 :selection 50
+		 :+selection.widget-selected
+		 (.setText label (str (.getSelection slider))))
+	(doprops label :text "50")
+	(doprops ok-button :text "OK" :+selection.widget-selected
+		 (do (save-swftw f (.getSelection slider))
+		     (.close dialog)))
+	(doprops cancel-button :text "Zapomnij"
+		 :+selection.widget-selected (.close dialog))
+	(doprops dialog :layout layout :text "Wybierz jakość"
+		 :size ^unroll (450 150))
+	(.open dialog))
+      (catch Exception e (.printStackTrace e)))
+      (save-png f))))
 
 (defn toolbar-buttons [arg-map]
   (doall (map (fn [[label f type]]
@@ -28,7 +54,7 @@
 		  (ToolItem. (:toolbar arg-map) SWT/SEPARATOR)))
 	      [["Wczytaj" #(do (open-file-dialog (:shell %))
 			      (reset-tools))]
-	       ["Złomuj"]
+	       ["Złomuj" #(save-file-dialog (:shell %))]
 	       []
 	       ["Zastosuj" #(do (send-task *data* apply-changes)
 				(reset-tools))]

@@ -12,7 +12,7 @@
 	   Composite Label Scale Canvas Display
 	   Button ToolBar ToolItem Text Table TableColumn TableItem]
 	  [org.eclipse.swt.custom ScrolledComposite TableEditor]
-	  [org.eclipse.swt.graphics Color GC ImageData Image PaletteData]
+	  [org.eclipse.swt.graphics Color GC ImageData Image PaletteData ImageLoader]
 	  [org.eclipse.swt.events SelectionListener PaintListener MouseMoveListener
 	   ModifyListener]
 	  [net.miginfocom.swt MigLayout]))
